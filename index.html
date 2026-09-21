@@ -4,19 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Üdvözlünk a FallenMTA weboldalán - Egyhelyen minden!">
-    <title>FallenMTA - Főoldal</title>
+    <title>FallenMTA - Fórum</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- BEJELENTKEZÉS MODAL (Háttérkép nélkül, sima sötét ablak) -->
+    <!-- BEJELENTKEZÉS MODAL -->
     <div id="loginModal" class="login-modal">
         <div class="login-box">
-            <h2>FallenMTA Fórum Bejelentkezés</h2>
-            <p>Add meg az adataidat a folytatáshoz!</p>
+            <h2>FallenMTA Bejelentkezés</h2>
+            <p>Add meg a nevedet a folytatáshoz!</p>
             <form id="loginForm" onsubmit="handleLogin(event)">
-                <input type="text" placeholder="Felhasználónév" required>
+                <input type="text" id="usernameInput" placeholder="Felhasználónév (pl. Elo2009)" required>
                 <input type="password" placeholder="Jelszó" required>
                 <button type="submit" class="btn btn-primary">Bejelentkezés</button>
             </form>
@@ -24,37 +24,26 @@
         </div>
     </div>
 
-    <!-- Navigációs sáv -->
-    <header class="navbar">
-        <div class="logo-container" onclick="location.reload()" style="cursor: pointer;">
-            <svg class="nav-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 15H80L65 40H52V85H48V40H35L20 15Z" fill="#C53030"/>
-                <path d="M28 25H72L61 45H52V75H48V45H39L28 25Z" fill="#E53E3E"/>
-            </svg>
-            <span class="logo-text">Fallen<span class="logo-mta">MTA</span></span>
-        </div>
-        <nav class="nav-links">
-            <a href="#" class="active" onclick="showHome(event)">Főoldal</a>
-            <a href="#hirek">Hírek</a>
-            <a href="https://discord.gg/f7WHCrTA" target="_blank">Kapcsolat</a>
-            <a href="#" onclick="openLogin(event)">Fórum</a>
-        </nav>
-    </header>
-
-    <!-- FŐOLDAL TARTALOM -->
+    <!-- FŐOLDAL (Ha még nem jelentkezett be) -->
     <div id="homeContent">
+        <header class="navbar">
+            <div class="logo-container" style="cursor: pointer;">
+                <span class="logo-text">Fallen<span class="logo-mta">MTA</span></span>
+            </div>
+            <nav class="nav-links">
+                <a href="#" class="active">Főoldal</a>
+                <a href="#hirek">Hírek</a>
+                <a href="https://discord.gg/f7WHCrTA" target="_blank">Kapcsolat</a>
+                <a href="#" onclick="openLogin(event)">Fórum</a>
+            </nav>
+        </header>
+
         <main class="hero-section">
             <div class="hero-content">
-                <div class="hero-logo-wrapper">
-                    <svg class="main-logo" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M15 20H105L85 55H68V105H52V55H35L15 20Z" fill="#A72828"/>
-                        <path d="M27 28H93L76 58H65V95H55V58H44L27 28Z" fill="#C53030"/>
-                    </svg>
-                </div>
                 <h1>Üdvözlünk a <span class="highlight">FallenMTA</span> weboldalán!</h1>
                 <p class="subtitle">Egyhelyen minden!</p>
                 <div class="hero-buttons">
-                    <a href="#hirek" class="btn btn-primary">Hírek megtekintése</a>
+                    <button onclick="openLogin(event)" class="btn btn-primary">Fórum megnyitása</button>
                     <a href="https://discord.gg/f7WHCrTA" target="_blank" class="btn btn-secondary">Discord csatlakozás</a>
                 </div>
             </div>
@@ -66,22 +55,24 @@
                 <div class="news-card">
                     <span class="news-date">2026. Szeptember</span>
                     <h3>Legjobb MTA szerver hamarosan nyit!</h3>[cite: 5]
-                    <p>Hamarosan megnyitja kapuit a FallenMTA! Készüljetek fel a legizgalmasabb szerepjáték élményre, egyedi scriptetekkel és remek közösséggel.</p>
+                    <p>Hamarosan megnyitja kapuit a FallenMTA! Készüljetek fel a legizgalmasabb szerepjáték élményre.</p>
                 </div>
             </div>
         </section>
     </div>
 
-    <!-- FÓRUM NÉZET -->
+    <!-- FÓRUM NÉZET (Bejelentkezés után) -->
     <div id="forumContent" class="forum-view" style="display: none;">
-        <div class="forum-header-bar">
-            <div class="logo-container">
-                <svg class="nav-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 15H80L65 40H52V85H48V40H35L20 15Z" fill="#C53030"/>
-                    <path d="M28 25H72L61 45H52V75H48V45H39L28 25Z" fill="#E53E3E"/>
-                </svg>
-                <span class="logo-text">Fallen<span class="logo-mta">MTA</span></span>
+        
+        <!-- XenForo stílusú felső sáv (DawnMTA helyett FallenMTA logóval) -->
+        <div class="forum-top-brand">
+            <div class="brand-logo">Fallen<span>MTA</span></div>
+            <div class="brand-search">
+                <input type="text" placeholder="Keresés...">
             </div>
+        </div>
+
+        <div class="forum-header-bar">
             <div class="forum-sub-menu">
                 <a href="#" class="active">Fórumok</a>
                 <a href="#">UCP</a>
@@ -90,37 +81,53 @@
                 <a href="#">Újdonságok</a>
             </div>
             <div class="forum-user-profile">
-                <span>Játékos</span>
+                <!-- Ide kerül az a név, amivel bejött a felhasználó -->
+                <span id="displayUsername" style="font-weight: 600; color: #fff;">Játékos</span>
                 <button onclick="showHome(event)" class="btn-logout">Kijelentkezés</button>
             </div>
         </div>
 
         <div class="forum-layout">
-            <!-- Bal oldali fő kategóriák -->
             <div class="forum-main-column">
-                <div class="forum-section-title">Fórum lista</div>
                 
+                <!-- Általános kategória -->
                 <div class="forum-category-card">
                     <div class="cat-title">Általános</div>
                     <div class="forum-item">
-                        <span class="item-icon">💬</span>
+                        <span class="item-icon">📄</span>
                         <div class="item-details">
                             <h4>Fórum Szabályzat</h4>
                             <p>Mielőtt a fórumot használni kezded, ezt a szabályzatot kötelezettséged átolvasni!</p>
                         </div>
                     </div>
                     <div class="forum-item">
-                        <span class="item-icon">💬</span>
+                        <span class="item-icon">🔗</span>
                         <div class="item-details">
                             <h4>FallenMTA Szerver Szabályzat</h4>
                         </div>
                     </div>
-                </div>
-
-                <div class="forum-category-card">
-                    <div class="cat-title">FallenMTA - Los Santos</div>
+                    <div class="forum-item">
+                        <span class="item-icon" style="color: #10b981;">💬</span>
+                        <div class="item-details">
+                            <h4>Fórum moderátorra való panasztétel <span class="badge-new">Új</span></h4>
+                            <p>Alfórumok ▼</p>
+                        </div>
+                    </div>
                     <div class="forum-item">
                         <span class="item-icon">💬</span>
+                        <div class="item-details">
+                            <h4>Fórummal kapcsolatos ötletek/gondok/hibák</h4>
+                            <p>Alfórumok ▼</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FallenMTA - Los Santos kategória -->
+                <div class="forum-category-card">
+                    <div class="cat-title">FallenMTA - Los Santos</div>
+                    
+                    <div class="forum-item">
+                        <span class="item-icon" style="color: #10b981;">💬</span>
                         <div class="item-details">
                             <h4>Szerver fejlesztések <span class="badge-new">Új</span></h4>[cite: 8]
                             <p>FallenMTA changelogok.</p>
@@ -130,28 +137,151 @@
                             <span>Üzenet: 18</span>[cite: 8]
                         </div>
                     </div>
+
                     <div class="forum-item">
-                        <span class="item-icon">💬</span>
+                        <span class="item-icon" style="color: #10b981;">💬</span>
                         <div class="item-details">
-                            <h4>Panaszkönyv [LS] <span class="badge-new">Új</span></h4>[cite: 8]
-                            <p>FallenMTA panaszkönyv.</p>
+                            <h4>Panaszkönyv [LS] <span class="badge-new">Új</span></h4>[cite: 8, 17]
+                            <p>FallenMTA panaszkönyv. <br><span style="font-size: 0.75rem; color: #8390a2;">Alfórumok ▼</span></p>
                         </div>
                         <div class="item-stats">
                             <span>Téma: 1.6K</span>[cite: 8]
                             <span>Üzenet: 9.2K</span>[cite: 8]
                         </div>
                     </div>
+
                     <div class="forum-item">
-                        <span class="item-icon">💬</span>
+                        <span class="item-icon" style="color: #10b981;">💬</span>
                         <div class="item-details">
-                            <h4>Unban kérelmek [LS] <span class="badge-new">Új</span></h4>[cite: 8, 9]
-                            <p>Kitiltás alóli kérelmek.</p>
+                            <h4>FőAdmin/SzuperAdmin segítségkérés [LS] <span class="badge-new">Új</span></h4>
+                            <p>Alfórumok ▼</p>
+                        </div>
+                        <div class="item-stats">
+                            <span>Téma: 1.8K</span>
+                            <span>Üzenet: 5.7K</span>
+                        </div>
+                    </div>
+
+                    <div class="forum-item">
+                        <span class="item-icon" style="color: #10b981;">💬</span>
+                        <div class="item-details">
+                            <h4>Unban kérelmek [LS] <span class="badge-new">Új</span></h4>[cite: 8, 9, 16]
+                            <p>Kitiltás alóli kérelmek. <br><span style="font-size: 0.75rem; color: #8390a2;">Alfórumok ▼</span></p>
                         </div>
                         <div class="item-stats">
                             <span>Téma: 1.4K</span>[cite: 8, 9]
                             <span>Üzenet: 3.2K</span>[cite: 8, 9]
                         </div>
                     </div>
+
+                    <div class="forum-item">
+                        <span class="item-icon" style="color: #10b981;">💬</span>
+                        <div class="item-details">
+                            <h4>Gondok/Bugok/Hibák [LS] <span class="badge-new">Új</span></h4>
+                            <p>Alfórumok ▼</p>
+                        </div>
+                        <div class="item-stats">
+                            <span>Téma: 499</span>
+                            <span>Üzenet: 1.3K</span>
+                        </div>
+                    </div>
+
+                    <div class="forum-item">
+                        <span class="item-icon" style="color: #10b981;">💬</span>
+                        <div class="item-details">
+                            <h4>Frakciók [LS] <span class="badge-new">Új</span></h4>
+                            <p>Alfórumok ▼</p>
+                        </div>
+                        <div class="item-stats">
+                            <span>Téma: 1.6K</span>
+                            <span>Üzenet: 5.4K</span>
+                        </div>
+                    </div>
+
+                    <div class="forum-item">
+                        <span class="item-icon" style="color: #10b981;">💬</span>
+                        <div class="item-details">
+                            <h4>Hirdető részleg [LS] <span class="badge-new">Új</span></h4>
+                            <p>Minden a szerveren felhalmozott legális vagyon, eladási, vételi és csere központja! ((IC RÉSZLEG)) <br><span style="font-size: 0.75rem; color: #8390a2;">Alfórumok ▼</span></p>
+                        </div>
+                        <div class="item-stats">
+                            <span>Téma: 59</span>
+                            <span>Üzenet: 158</span>
+                        </div>
+                    </div>
+
+                    <div class="forum-item">
+                        <span class="item-icon" style="color: #10b981;">💬</span>
+                        <div class="item-details">
+                            <h4>Los Santosi Élet [LS] <span class="badge-new">Új</span></h4>
+                            <p>Alfórumok ▼</p>
+                        </div>
+                        <div class="item-stats">
+                            <span>Téma: 276</span>
+                            <span>Üzenet: 854</span>
+                        </div>
+                    </div>
+
+                    <div class="forum-item">
+                        <span class="item-icon" style="color: #10b981;">💬</span>
+                        <div class="item-details">
+                            <h4>Művésznegyed [LS] <span class="badge-new">Új</span></h4>
+                            <p>Alfórumok ▼</p>
+                        </div>
+                        <div class="item-stats">
+                            <span>Téma: 7</span>
+                            <span>Üzenet: 50</span>
+                        </div>
+                    </div>
+
+                    <div class="forum-item">
+                        <span class="item-icon" style="color: #10b981;">💬</span>
+                        <div class="item-details">
+                            <h4>Off Topic [LS] <span class="badge-new">Új</span></h4>
+                            <p>Alfórumok ▼</p>
+                        </div>
+                        <div class="item-stats">
+                            <span>Téma: 12</span>
+                            <span>Üzenet: 510</span>
+                        </div>
+                    </div>
+
+                    <div class="forum-item">
+                        <span class="item-icon" style="color: #10b981;">💬</span>
+                        <div class="item-details">
+                            <h4>Moderátor részleg [LS] <span class="badge-new">Új</span></h4>
+                            <p>Alfórumok ▼</p>
+                        </div>
+                        <div class="item-stats">
+                            <span>Téma: 250</span>
+                            <span>Üzenet: 663</span>
+                        </div>
+                    </div>
+
+                    <div class="forum-item">
+                        <span class="item-icon" style="color: #10b981;">💬</span>
+                        <div class="item-details">
+                            <h4>Fallen Game Helpdesk [LS] <span class="badge-new">Új</span></h4>
+                            <p>Alfórumok ▼</p>
+                        </div>
+                        <div class="item-stats">
+                            <span>Téma: 352</span>
+                            <span>Üzenet: 841</span>
+                        </div>
+                    </div>
+
+                    <div class="forum-item">
+                        <span class="item-icon" style="color: #10b981;">💬</span>
+                        <div class="item-details">
+                            <h4>Kérdések [LS] <span class="badge-new">Új</span></h4>
+                            <p>Alfórumok ▼</p>
+                        </div>
+                        <div class="item-stats">
+                            <span>Téma: 19</span>
+                            <span>Üzenet: 63</span>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -159,23 +289,18 @@
             <div class="forum-sidebar">
                 <div class="sidebar-box">
                     <h3>👥 Online felhasználók</h3>
-                    <p style="font-size: 0.85rem; color: #a0aec0; margin-bottom: 8px;">Játékos, Admin, Moderátor és vendégek böngészik az oldalt.</p>
+                    <p style="font-size: 0.85rem; color: #a0aec0; margin-bottom: 8px;">Játékosok és vendégek böngészik az oldalt.</p>
                     <span style="font-size: 0.85rem; color: #e53e3e; font-weight: 600;">Összesen: 24 online tag</span>
                 </div>
                 <div class="sidebar-box">
-                    <h3>📊 Online statisztikák</h3>
-                    <p style="font-size: 0.85rem; color: #a0aec0;">Online tagok: 15</p>
-                    <p style="font-size: 0.85rem; color: #a0aec0;">Online vendégek: 9</p>
-                </div>
-                <div class="sidebar-box">
-                    <h3>🔥 Új hozzászólások</h3>
+                    <h3>🔥 Friss hozzászólások</h3>
                     <div class="recent-reply">
-                        <strong>Játékos panasza</strong>
-                        <span>Utolsó: Adminisztrátor • 2 perce</span>
+                        <strong>csomagtartózás</strong>
+                        <span>15 perccel ezelőtt • Axe15</span>
                     </div>
                     <div class="recent-reply">
-                        <strong>Frakció fejlesztési kérelem</strong>
-                        <span>Utolsó: Főadmin • 15 perce</span>
+                        <strong>PD széf kulcs</strong>
+                        <span>54 perccel ezelőtt • Cali</span>
                     </div>
                 </div>
             </div>
@@ -192,6 +317,10 @@
         }
         function handleLogin(e) {
             e.preventDefault();
+            const username = document.getElementById('usernameInput').value;
+            if(username) {
+                document.getElementById('displayUsername').innerText = username;
+            }
             document.getElementById('loginModal').style.display = 'none';
             document.getElementById('homeContent').style.display = 'none';
             document.getElementById('forumContent').style.display = 'block';
