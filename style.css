@@ -1,0 +1,432 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #0d0e12;
+    color: #ffffff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navigáció */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 50px;
+    background-color: transparent;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-logo {
+    width: 28px;
+    height: 28px;
+}
+
+.logo-text {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.logo-mta {
+    color: #e53e3e;
+}
+
+.nav-links {
+    display: flex;
+    gap: 30px;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #a0aec0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: color 0.2s ease;
+    cursor: pointer;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+    color: #ffffff;
+}
+
+/* Hero és Hírek */
+.hero-section {
+    min-height: 80vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+}
+
+.hero-content {
+    max-width: 700px;
+}
+
+.main-logo {
+    width: 110px;
+    height: 110px;
+    filter: drop-shadow(0 10px 20px rgba(197, 48, 48, 0.2));
+    margin-bottom: 30px;
+}
+
+.hero-content h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 15px;
+}
+
+.hero-content .highlight {
+    color: #e53e3e;
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    color: #a0aec0;
+    margin-bottom: 40px;
+}
+
+.hero-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.btn {
+    padding: 12px 28px;
+    border-radius: 30px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-primary {
+    background-color: #e53e3e;
+    color: #ffffff;
+    box-shadow: 0 4px 20px rgba(229, 62, 62, 0.4);
+}
+
+.btn-primary:hover {
+    background-color: #c53030;
+}
+
+.btn-secondary {
+    background-color: #1a1c23;
+    color: #ffffff;
+    border: 1px solid #2d3748;
+}
+
+.btn-secondary:hover {
+    background-color: #2d3748;
+}
+
+.news-section {
+    padding: 80px 20px;
+    background-color: #08090c;
+    display: flex;
+    justify-content: center;
+}
+
+.news-container {
+    max-width: 800px;
+    width: 100%;
+}
+
+.news-container h2 {
+    font-size: 2rem;
+    margin-bottom: 30px;
+    border-left: 4px solid #e53e3e;
+    padding-left: 15px;
+}
+
+.news-card {
+    background-color: #12141c;
+    border: 1px solid #1f2430;
+    padding: 30px;
+    border-radius: 12px;
+}
+
+.news-date {
+    font-size: 0.85rem;
+    color: #e53e3e;
+    font-weight: 600;
+}
+
+.news-card h3 {
+    font-size: 1.5rem;
+    margin: 10px 0 15px 0;
+}
+
+.news-card p {
+    color: #a0aec0;
+    line-height: 1.6;
+}
+
+/* BEJELENTKEZÉS MODAL (Háttérkép nélkül, tiszta sötét dizájn) */
+.login-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(5, 6, 8, 0.85);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-box {
+    background-color: #12141c;
+    padding: 40px;
+    border-radius: 12px;
+    border: 1px solid #1f2430;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+}
+
+.login-box h2 {
+    margin-bottom: 10px;
+    color: #ffffff;
+}
+
+.login-box p {
+    color: #a0aec0;
+    margin-bottom: 25px;
+    font-size: 0.9rem;
+}
+
+.login-box input {
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    background: #1a1c23;
+    border: 1px solid #2d3748;
+    border-radius: 8px;
+    color: white;
+    font-size: 1rem;
+}
+
+.login-box button {
+    width: 100%;
+    margin-top: 5px;
+}
+
+.close-modal {
+    background: transparent;
+    border: none;
+    color: #a0aec0;
+    margin-top: 15px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+.close-modal:hover {
+    color: #fff;
+}
+
+/* FÓRUM NÉZET DIZÁJN */
+.forum-view {
+    background-color: #0d0e12;
+    min-height: 100vh;
+    padding-bottom: 50px;
+}
+
+.forum-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #12141c;
+    padding: 15px 40px;
+    border-bottom: 1px solid #1f2430;
+}
+
+.forum-sub-menu {
+    display: flex;
+    gap: 25px;
+}
+
+.forum-sub-menu a {
+    text-decoration: none;
+    color: #a0aec0;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.forum-sub-menu a:hover, .forum-sub-menu a.active {
+    color: #ffffff;
+}
+
+.forum-user-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 0.9rem;
+    color: #cbd5e1;
+}
+
+.btn-logout {
+    background: #e53e3e;
+    color: white;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.forum-layout {
+    max-width: 1300px;
+    margin: 30px auto;
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 25px;
+}
+
+.forum-section-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: #ffffff;
+}
+
+.forum-category-card {
+    background-color: #12141c;
+    border: 1px solid #1f2430;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    overflow: hidden;
+}
+
+.cat-title {
+    background-color: #181b24;
+    padding: 12px 20px;
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.95rem;
+    border-bottom: 1px solid #1f2430;
+}
+
+.forum-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #181b24;
+    gap: 15px;
+}
+
+.forum-item:last-child {
+    border-bottom: none;
+}
+
+.item-icon {
+    font-size: 1.2rem;
+    background: #1a1c23;
+    padding: 10px;
+    border-radius: 8px;
+    color: #e53e3e;
+}
+
+.item-details {
+    flex: 1;
+}
+
+.item-details h4 {
+    font-size: 0.95rem;
+    color: #ffffff;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.item-details p {
+    font-size: 0.8rem;
+    color: #8390a2;
+}
+
+.badge-new {
+    background-color: #10b981;
+    color: white;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.item-stats {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+    font-size: 0.8rem;
+    color: #8390a2;
+    gap: 2px;
+}
+
+/* Jobb oldali sáv (Sidebar) */
+.forum-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sidebar-box {
+    background-color: #12141c;
+    border: 1px solid #1f2430;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.sidebar-box h3 {
+    font-size: 0.95rem;
+    color: #ffffff;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #1f2430;
+    padding-bottom: 8px;
+}
+
+.recent-reply {
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+}
+
+.recent-reply strong {
+    display: block;
+    color: #38bdf8;
+    margin-bottom: 2px;
+}
+
+.recent-reply span {
+    color: #8390a2;
+    font-size: 0.75rem;
+}
+
+@media(max-width: 900px) {
+    .forum-layout {
+        grid-template-columns: 1fr;
+    }
+}

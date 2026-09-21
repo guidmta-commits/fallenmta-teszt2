@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Üdvözlünk a FallenMTA weboldalán - Egyhelyen minden!">
+    <title>FallenMTA - Főoldal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- BEJELENTKEZÉS MODAL (Háttérkép nélkül, sima sötét ablak) -->
+    <div id="loginModal" class="login-modal">
+        <div class="login-box">
+            <h2>FallenMTA Fórum Bejelentkezés</h2>
+            <p>Add meg az adataidat a folytatáshoz!</p>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <input type="text" placeholder="Felhasználónév" required>
+                <input type="password" placeholder="Jelszó" required>
+                <button type="submit" class="btn btn-primary">Bejelentkezés</button>
+            </form>
+            <button class="close-modal" onclick="closeLogin()">Vissza a főoldalra</button>
+        </div>
+    </div>
+
+    <!-- Navigációs sáv -->
+    <header class="navbar">
+        <div class="logo-container" onclick="location.reload()" style="cursor: pointer;">
+            <svg class="nav-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 15H80L65 40H52V85H48V40H35L20 15Z" fill="#C53030"/>
+                <path d="M28 25H72L61 45H52V75H48V45H39L28 25Z" fill="#E53E3E"/>
+            </svg>
+            <span class="logo-text">Fallen<span class="logo-mta">MTA</span></span>
+        </div>
+        <nav class="nav-links">
+            <a href="#" class="active" onclick="showHome(event)">Főoldal</a>
+            <a href="#hirek">Hírek</a>
+            <a href="https://discord.gg/f7WHCrTA" target="_blank">Kapcsolat</a>
+            <a href="#" onclick="openLogin(event)">Fórum</a>
+        </nav>
+    </header>
+
+    <!-- FŐOLDAL TARTALOM -->
+    <div id="homeContent">
+        <main class="hero-section">
+            <div class="hero-content">
+                <div class="hero-logo-wrapper">
+                    <svg class="main-logo" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 20H105L85 55H68V105H52V55H35L15 20Z" fill="#A72828"/>
+                        <path d="M27 28H93L76 58H65V95H55V58H44L27 28Z" fill="#C53030"/>
+                    </svg>
+                </div>
+                <h1>Üdvözlünk a <span class="highlight">FallenMTA</span> weboldalán!</h1>
+                <p class="subtitle">Egyhelyen minden!</p>
+                <div class="hero-buttons">
+                    <a href="#hirek" class="btn btn-primary">Hírek megtekintése</a>
+                    <a href="https://discord.gg/f7WHCrTA" target="_blank" class="btn btn-secondary">Discord csatlakozás</a>
+                </div>
+            </div>
+        </main>
+
+        <section id="hirek" class="news-section">
+            <div class="news-container">
+                <h2>Friss Hírek</h2>
+                <div class="news-card">
+                    <span class="news-date">2026. Szeptember</span>
+                    <h3>Legjobb MTA szerver hamarosan nyit!</h3>[cite: 5]
+                    <p>Hamarosan megnyitja kapuit a FallenMTA! Készüljetek fel a legizgalmasabb szerepjáték élményre, egyedi scriptetekkel és remek közösséggel.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- FÓRUM NÉZET -->
+    <div id="forumContent" class="forum-view" style="display: none;">
+        <div class="forum-header-bar">
+            <div class="logo-container">
+                <svg class="nav-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 15H80L65 40H52V85H48V40H35L20 15Z" fill="#C53030"/>
+                    <path d="M28 25H72L61 45H52V75H48V45H39L28 25Z" fill="#E53E3E"/>
+                </svg>
+                <span class="logo-text">Fallen<span class="logo-mta">MTA</span></span>
+            </div>
+            <div class="forum-sub-menu">
+                <a href="#" class="active">Fórumok</a>
+                <a href="#">UCP</a>
+                <a href="#">Prémium Shop</a>
+                <a href="https://discord.gg/f7WHCrTA" target="_blank">Discord</a>
+                <a href="#">Újdonságok</a>
+            </div>
+            <div class="forum-user-profile">
+                <span>Játékos</span>
+                <button onclick="showHome(event)" class="btn-logout">Kijelentkezés</button>
+            </div>
+        </div>
+
+        <div class="forum-layout">
+            <!-- Bal oldali fő kategóriák -->
+            <div class="forum-main-column">
+                <div class="forum-section-title">Fórum lista</div>
+                
+                <div class="forum-category-card">
+                    <div class="cat-title">Általános</div>
+                    <div class="forum-item">
+                        <span class="item-icon">💬</span>
+                        <div class="item-details">
+                            <h4>Fórum Szabályzat</h4>
+                            <p>Mielőtt a fórumot használni kezded, ezt a szabályzatot kötelezettséged átolvasni!</p>
+                        </div>
+                    </div>
+                    <div class="forum-item">
+                        <span class="item-icon">💬</span>
+                        <div class="item-details">
+                            <h4>FallenMTA Szerver Szabályzat</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="forum-category-card">
+                    <div class="cat-title">FallenMTA - Los Santos</div>
+                    <div class="forum-item">
+                        <span class="item-icon">💬</span>
+                        <div class="item-details">
+                            <h4>Szerver fejlesztések <span class="badge-new">Új</span></h4>[cite: 8]
+                            <p>FallenMTA changelogok.</p>
+                        </div>
+                        <div class="item-stats">
+                            <span>Téma: 18</span>[cite: 8]
+                            <span>Üzenet: 18</span>[cite: 8]
+                        </div>
+                    </div>
+                    <div class="forum-item">
+                        <span class="item-icon">💬</span>
+                        <div class="item-details">
+                            <h4>Panaszkönyv [LS] <span class="badge-new">Új</span></h4>[cite: 8]
+                            <p>FallenMTA panaszkönyv.</p>
+                        </div>
+                        <div class="item-stats">
+                            <span>Téma: 1.6K</span>[cite: 8]
+                            <span>Üzenet: 9.2K</span>[cite: 8]
+                        </div>
+                    </div>
+                    <div class="forum-item">
+                        <span class="item-icon">💬</span>
+                        <div class="item-details">
+                            <h4>Unban kérelmek [LS] <span class="badge-new">Új</span></h4>[cite: 8, 9]
+                            <p>Kitiltás alóli kérelmek.</p>
+                        </div>
+                        <div class="item-stats">
+                            <span>Téma: 1.4K</span>[cite: 8, 9]
+                            <span>Üzenet: 3.2K</span>[cite: 8, 9]
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Jobb oldali sáv -->
+            <div class="forum-sidebar">
+                <div class="sidebar-box">
+                    <h3>👥 Online felhasználók</h3>
+                    <p style="font-size: 0.85rem; color: #a0aec0; margin-bottom: 8px;">Játékos, Admin, Moderátor és vendégek böngészik az oldalt.</p>
+                    <span style="font-size: 0.85rem; color: #e53e3e; font-weight: 600;">Összesen: 24 online tag</span>
+                </div>
+                <div class="sidebar-box">
+                    <h3>📊 Online statisztikák</h3>
+                    <p style="font-size: 0.85rem; color: #a0aec0;">Online tagok: 15</p>
+                    <p style="font-size: 0.85rem; color: #a0aec0;">Online vendégek: 9</p>
+                </div>
+                <div class="sidebar-box">
+                    <h3>🔥 Új hozzászólások</h3>
+                    <div class="recent-reply">
+                        <strong>Játékos panasza</strong>
+                        <span>Utolsó: Adminisztrátor • 2 perce</span>
+                    </div>
+                    <div class="recent-reply">
+                        <strong>Frakció fejlesztési kérelem</strong>
+                        <span>Utolsó: Főadmin • 15 perce</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openLogin(e) {
+            e.preventDefault();
+            document.getElementById('loginModal').style.display = 'flex';
+        }
+        function closeLogin() {
+            document.getElementById('loginModal').style.display = 'none';
+        }
+        function handleLogin(e) {
+            e.preventDefault();
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('homeContent').style.display = 'none';
+            document.getElementById('forumContent').style.display = 'block';
+        }
+        function showHome(e) {
+            e.preventDefault();
+            document.getElementById('forumContent').style.display = 'none';
+            document.getElementById('homeContent').style.display = 'block';
+            closeLogin();
+        }
+    </script>
+</body>
+</html>
