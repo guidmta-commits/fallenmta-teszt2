@@ -117,38 +117,6 @@
             }
         }
 
-        /* Fórum lista feletti sáv a gombnak */
-        .forum-action-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .forum-list-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #ffffff;
-        }
-
-        .btn-new-topic {
-            background-color: #3ba55d;
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 4px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-new-topic:hover {
-            background-color: #2d8247;
-        }
-
         /* Fórum lista blokk */
         .forum-section {
             background-color: #36393f;
@@ -195,8 +163,15 @@
         .forum-title-wrapper {
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: space-between;
             margin-bottom: 3px;
+            padding-right: 20px;
+        }
+
+        .forum-name-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .forum-name {
@@ -205,14 +180,20 @@
             color: #ffffff;
         }
 
-        .badge-new {
+        /* Inline "Téma létrehozása" gomb a sorban */
+        .btn-inline-new {
             background-color: #3ba55d;
             color: white;
-            font-size: 0.65rem;
-            padding: 1px 5px;
+            border: none;
+            padding: 4px 10px;
             border-radius: 3px;
-            font-weight: bold;
-            text-transform: uppercase;
+            font-weight: 600;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .btn-inline-new:hover {
+            background-color: #2d8247;
         }
 
         .forum-desc {
@@ -351,12 +332,6 @@
             
             <!-- Bal oszlop: Fórumok -->
             <div>
-                <!-- Fórum lista fejléc a gombbal -->
-                <div class="forum-action-bar">
-                    <div class="forum-list-title">Fórum lista</div>
-                    <button class="btn-new-topic">✏️ Új téma létrehozása...</button>
-                </div>
-
                 <!-- Általános Kategória -->
                 <div class="forum-section">
                     <div class="category-header">Általános</div>
@@ -381,8 +356,10 @@
                     <div class="forum-row bg-1">
                         <div class="forum-details">
                             <div class="forum-title-wrapper">
-                                <a href="#" class="forum-name">Fórum moderátorra való panasztétel</a>
-                                <span class="badge-new">Új</span>
+                                <div class="forum-name-group">
+                                    <a href="#" class="forum-name">Fórum moderátorra való panasztétel</a>
+                                </div>
+                                <button class="btn-inline-new">Téma létrehozása</button>
                             </div>
                             <div class="forum-desc">Alfórumok ▼</div>
                         </div>
@@ -401,7 +378,10 @@
                     <div class="forum-row bg-2">
                         <div class="forum-details">
                             <div class="forum-title-wrapper">
-                                <a href="#" class="forum-name">Fórummal kapcsolatos ötletek/gondok/hibák</a>
+                                <div class="forum-name-group">
+                                    <a href="#" class="forum-name">Fórummal kapcsolatos ötletek/gondok/hibák</a>
+                                </div>
+                                <button class="btn-inline-new">Téma létrehozása</button>
                             </div>
                             <div class="forum-desc">Alfórumok ▼</div>
                         </div>
@@ -425,8 +405,10 @@
                     <div class="forum-row bg-1">
                         <div class="forum-details">
                             <div class="forum-title-wrapper">
-                                <a href="#" class="forum-name">Szerver fejlesztések</a>
-                                <span class="badge-new">Új</span>
+                                <div class="forum-name-group">
+                                    <a href="#" class="forum-name">Szerver fejlesztések</a>
+                                </div>
+                                <button class="btn-inline-new">Téma létrehozása</button>
                             </div>
                             <div class="forum-desc">FallenMTA changelogok.</div>
                         </div>
@@ -445,48 +427,10 @@
                     <div class="forum-row bg-2">
                         <div class="forum-details">
                             <div class="forum-title-wrapper">
-                                <a href="#" class="forum-name">Leírások</a>
-                                <span class="badge-new">Új</span>
-                            </div>
-                            <div class="forum-desc">FallenMTA Leírások.<br>Alfórumok ▼</div>
-                        </div>
-                        <div class="forum-stats">
-                            Téma: 29<br>Üzenet: 459
-                        </div>
-                        <div class="forum-last-post">
-                            <div class="avatar">BM</div>
-                            <div class="last-post-info">
-                                <a href="#">Frakció In...</a>
-                                <span class="recent-sub">Tegnap 21:10</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="forum-row bg-1">
-                        <div class="forum-details">
-                            <div class="forum-title-wrapper">
-                                <a href="#" class="forum-name">Ötletek</a>
-                                <span class="badge-new">Új</span>
-                            </div>
-                            <div class="forum-desc">Szerverrel kapcsolatos ötletek.<br>Alfórumok ▼</div>
-                        </div>
-                        <div class="forum-stats">
-                            Téma: 267<br>Üzenet: 1.4K
-                        </div>
-                        <div class="forum-last-post">
-                            <div class="avatar">V</div>
-                            <div class="last-post-info">
-                                <a href="#">Mercedes-Benz E 63 S</a>
-                                <span class="recent-sub">Tegnap 22:43</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="forum-row bg-2">
-                        <div class="forum-details">
-                            <div class="forum-title-wrapper">
-                                <a href="#" class="forum-name">Panaszkönyv</a>
-                                <span class="badge-new">Új</span>
+                                <div class="forum-name-group">
+                                    <a href="#" class="forum-name">Panaszkönyv</a>
+                                </div>
+                                <button class="btn-inline-new">Téma létrehozása</button>
                             </div>
                             <div class="forum-desc">FallenMTA panaszkönyv.<br>Alfórumok ▼</div>
                         </div>
@@ -505,8 +449,10 @@
                     <div class="forum-row bg-1">
                         <div class="forum-details">
                             <div class="forum-title-wrapper">
-                                <a href="#" class="forum-name">FőAdmin/SzuperAdmin segítségkérés</a>
-                                <span class="badge-new">Új</span>
+                                <div class="forum-name-group">
+                                    <a href="#" class="forum-name">FőAdmin/SzuperAdmin segítségkérés</a>
+                                </div>
+                                <button class="btn-inline-new">Téma létrehozása</button>
                             </div>
                             <div class="forum-desc">Alfórumok ▼</div>
                         </div>
@@ -518,6 +464,94 @@
                             <div class="last-post-info">
                                 <a href="#">Random aj amit ucp nem is</a>
                                 <span class="recent-sub">17 perce</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-2">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <div class="forum-name-group">
+                                    <a href="#" class="forum-name">Unban kérelmek</a>
+                                </div>
+                                <button class="btn-inline-new">Téma létrehozása</button>
+                            </div>
+                            <div class="forum-desc">Kitiltás alóli kérelmek.<br>Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 1.4K<br>Üzenet: 3.2K
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">UK</div>
+                            <div class="last-post-info">
+                                <a href="#">UB kérelem #412</a>
+                                <span class="recent-sub">1 órája</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-1">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <div class="forum-name-group">
+                                    <a href="#" class="forum-name">Gondok/Bugok/Hibák</a>
+                                </div>
+                                <button class="btn-inline-new">Téma létrehozása</button>
+                            </div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 499<br>Üzenet: 1.3K
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">GB</div>
+                            <div class="last-post-info">
+                                <a href="#">Interior hiba</a>
+                                <span class="recent-sub">3 órája</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-2">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <div class="forum-name-group">
+                                    <a href="#" class="forum-name">Frakciók</a>
+                                </div>
+                                <button class="btn-inline-new">Téma létrehozása</button>
+                            </div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 1.6K<br>Üzenet: 5.4K
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">F</div>
+                            <div class="last-post-info">
+                                <a href="#">Leader váltás</a>
+                                <span class="recent-sub">5 órája</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-1">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <div class="forum-name-group">
+                                    <a href="#" class="forum-name">Hirdető részleg</a>
+                                </div>
+                                <button class="btn-inline-new">Téma létrehozása</button>
+                            </div>
+                            <div class="forum-desc">Minden a szerveren felhalmozott legális vagyon, eladási, vételi és csere központja! IC RÉSZLEG</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 59<br>Üzenet: 158
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">H</div>
+                            <div class="last-post-info">
+                                <a href="#">Eladó BMW M5 e60</a>
+                                <span class="recent-sub">Tegnap</span>
                             </div>
                         </div>
                     </div>
