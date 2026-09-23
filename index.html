@@ -1,1432 +1,755 @@
-const launcherVer = 
-70
-;
-
-function launcherLog(text) {
-  console.log(text);
-
-  let date = new Date();
-
-  //format date as YYYY-MM-DD HH:MM:SS
-  let formattedDate = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
-
-  fs.appendFileSync("C:\\ProgramData\\FallenMTA Launcher\\log.txt", "[" + formattedDate + "] " + text + "\n");
-}
-
-// Modules to control application life and create native browser window
-const {app, BrowserWindow, ipcMain, dialog, session} = require("electron");
-const {spawnSync, exec, execSync} = require('child_process');
-const path = require('path')
-const os = require('os')
-
-const winW = 1024;
-const winH = 625;
-
-
-let mainWindow;
-
-function createWindow () {
-  // Create the browser window.
-  mainWindow = new BrowserWindow({
-    icon:'assets/icon.ico',
-    width: winW,
-    height: winH,
-    autoHideMenuBar: true,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      nodeIntegration: true,
-      contextIsolation: false,
-      devTools: !app.isPackaged,
-    },
-    resizable: false,
-    frame: false,
-    titleBarStyle: 'hidden'
-  })
-
-  // and load the index.html of the app.
-  mainWindow.loadFile('index.html').then(FallenLauncherReady)
-
-  mainWindow.on('closed', function () {
-    mainWindow = null;
-  })
-
-  // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
-}
-
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-function continueStartup() {
-
-}
-
-function startUpAfterTasklist() {
-  if(process.platform == "win32")
-  {
-    let release = require('os').release();
-
-    if(parseInt(release.split(".")[2]) < 10586)
-    {
-      dialog.showErrorBox('Hiba', 'Minimum támogatott Windows verzió: Windows 10 (10586)!')
-      app.quit();
-    }
-  }
-  else
-  {
-    dialog.showErrorBox('Hiba', 'Minimum támogatott Windows verzió: Windows 10 (10586)!')
-    app.quit();
-  }
-
-  createWindow()
-
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-}
-
-app.whenReady().then(() => {
-  startUpAfterTasklist();
-  //checkAlreadyRunning(startUpAfterTasklist);
-})
-
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') app.quit()
-})
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
-
-
-/* -------------------------------------------------------------------------- */
-/*                              FallenLauncher code                              */
-/* -------------------------------------------------------------------------- */
-
-let devCode = false;
-
-function formatBytes(bytes, decimals = 2) {
-  if (!+bytes) return '0 Bytes'
-
-  const k = 1024
-  const dm = decimals < 0 ? 0 : decimals
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-
-  return `${parseInt((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
-}
-
-
-const DecompressZip = require('decompress-zip');
-//const unzipper = new DecompressZip(ZIP_FILE_PATH);
-const fs = require('fs');
-const crypto = require('crypto');
-const request = require('request');
-const { getAllInstalledSoftware } = require("fetch-installed-software")
-
-//request
-function downloader(file_url, file, onProgress, onCompleted, onError, sslRetry) {
-  if(fs.existsSync(file))
-  {
-    try { fs.rmSync(file, { force: true }); }
-    catch (e) { launcherLog("downloader error (" + file_url + "): " + e.toString()); onError(e); return; }
-  }
-
-  try { fs.mkdirSync(path.dirname(file)) }
-  catch (e) {}
-
-  try { var out = fs.createWriteStream(file); }
-  catch (e) { launcherLog("downloader error (" + file_url + "): " + e.toString()); onError(e); return; }
-
-  let headers = {}
-
-  if(devCode)
-  {
-    let head = Buffer.from('dev:' + devCode).toString('base64')
-    headers['Authorization'] = 'Basic ' + head;
-  }
-
-  launcherLog("starting downloader: " + file_url);
-
-  var req = request({
-      headers: headers,
-      method: 'GET',
-      uri: file_url
-  });
-
-  let aborted = false;
-
-  req.pipe(out);
-
-  let contentLength = 0;
-  let receivedLength = 0;
-
-  req.on('response', function (data) {
-    contentLength = data.headers['content-length'];
-
-    if(mainWindow && !aborted)
-      onProgress(receivedLength, contentLength, (contentLength > 0 ? ((receivedLength/contentLength)) : 0))
-  });
-
-  req.on('error', function(e) {
-    if(mainWindow && !aborted)
-    {
-      aborted = true;
-
-      launcherLog("downloader error (" + file_url + "): " + e.toString()); 
-      req.abort();
-
-      if(!sslRetry)
-      {
-        launcherLog("retry without ssl");
-        downloader(file_url.replace("https", "http"), file, onProgress, onCompleted, onError, true);
-      }
-      else
-        onError(e);
-    }
-  });
-
-  req.on('data', function (chunk) {
-    if(mainWindow && !aborted)
-    {
-      receivedLength += chunk.length;
-      onProgress({
-        transferredBytes: receivedLength,
-        totalBytes: contentLength,
-        percent: (contentLength > 0 ? ((receivedLength/contentLength)) : 0)
-      })
-    }
-  });
-
-  req.on('end', function() {
-    if(mainWindow && !aborted)
-      onCompleted();
-  });
-};
-
-let currentProc = "Loading";
-let buttonsDisabled = true;
-
-function setCurrentProc(proc)
-{  
-  currentProc = proc;
-  launcherLog("new proc: " + proc)
-
-  let tmp = (proc && true || false);
-
-  if(buttonsDisabled != tmp)
-  {
-    buttonsDisabled = tmp;
-    mainWindow.webContents.send("setButtonsDisabled", buttonsDisabled);
-  }
-}
-
-let installDirectory;
-
-function setInstallDirectoryEx(dir, newDir) {
-  launcherLog("try new install folder: " + newDir) 
-  
-  setCurrentProc("SettingInstallDir")
-
-  fs.mkdir(newDir, (err) => {
-    if (err) {
-      if(err.code != "EEXIST")
-      {
-        dialog.showErrorBox('Hiba', 'Hiba a mappa kiválasztása során!')
-        setCurrentProc(false)
-
-        launcherLog("install folder err:"  + err)
-
-        return;
-      }
-    }
-
-    let was = installDirectory;
-
-    installDirectory = newDir;
-    mainWindow.webContents.send("changedInstallDirectory", installDirectory);
-    checkVersions()
-
-    launcherLog("new install folder: " + newDir)
-
-    if(was)
-      fs.writeFileSync("C:\\ProgramData\\FallenMTA Launcher\\InstallFolder.see", dir);
-    
-    try { fs.rmSync(path.join(installDirectory, "tmp"), { recursive: true, force: true }) } catch (e) { }
-    
-    setCurrentProc(false);
-    checkVersions();
-  });
-}
-
-function uninstallSee(cb) {
-  if(!fs.existsSync(installDirectory) && cb)
-    cb();
-
-  dialog.showMessageBox({
-    title: "Eltávolítás",
-    buttons: ["Mégsem szeretném törölni", "Törlés a beállítások és egyéb egyedi fájlok megörzésével","Összes fájl törlése"],
-    message: "FallenMTA eltávolítása:"
-  }).then(res => {
-
-    if(res.response == 1)
-    {
-      fs.readFile(path.join(installDirectory, "ver.see"), 'utf8', function (err,data) {
-        if (!err) {
-          downloader("https://client.seega.me/dl/sum_" + data + ".see", path.join(installDirectory, "tmp", "sum.see"),
-          () => {},
-          () => {
-            fs.readFile(path.join(installDirectory, "tmp", "sum.see"), 'utf8', function (err,data) {
-              try { fs.rmSync(path.join(installDirectory, "tmp"), { recursive: true, force: true }); } catch (e) {}
-              if (err) {
-                setCurrentProc(false)
-                dialog.showErrorBox('Hiba', 'Hiba a FallenMTA eltávolítása közben! Nincs telepítve a FallenMTA! Próbáld meg eltávolítani a fájlok megőrzése nélkül. (015)')
-                launcherLog("uninstall err:"  + err.toString())
-                return
-              }
-              else
-              {
-                let dat = data.split("\n");
-          
-                for(let i=0; i<dat.length; i+=2)
-                {
-                  if(dat[i])
-                  {
-                    try { fs.rmSync(path.join(installDirectory, dat[i]), { recursive: true, force: true }); } catch (e) {}
-                  }
-                }
-                
-                try { fs.rmSync(path.join(installDirectory, "ver.see"), { recursive: true, force: true }); } catch (e) {}
-
-                checkVersions()
-
-                if(cb)
-                  cb();
-              }
-            });
-          },() => {
-            dialog.showErrorBox('Hiba', "Hiba a FallenMTA eltávolítása közben! Próbáld meg eltávolítani a fájlok megőrzése nélkül. (014)")
-            mainWindow.webContents.send("changedInstallProg", false);
-            setCurrentProc(false)
-          })
-        }
-        else
-        {
-          setCurrentProc(false)
-          dialog.showErrorBox('Hiba', 'Hiba a FallenMTA eltávolítása közben! Már nem található a számítógépeden. Próbáld meg eltávolítani a fájlok megőrzése nélkül. (017)')
-          return
-        }
-      });
-      
-    }
-    else if(res.response == 2)
-    {
-      try { fs.rmSync(installDirectory, { recursive: true, force: true }); } catch (e) {
-        dialog.showErrorBox('Hiba', "Hiba a FallenMTA eltávolítása közben! (016)")
-      }
-      
-      checkVersions()
-
-      if(cb)
-        cb();
-    }
-  });
-}
-
-function setInstallDirectory(dir) {
-  if(!currentProc)
-  {
-    setCurrentProc("SettingInstallDir")
-
-    let newDir = path.join(dir, "\\FallenMTA");
-
-    if(installDirectory != newDir)
-    {
-      if(installDirectory)
-      {
-        dialog.showMessageBox({
-          title: "Új telepítési mappa",
-          buttons: ["Nem","Igen"],
-          message: "Szeretnéd eltávolítani a FallenMTA-t a számítógépedről?"
-        }).then(res => {
-          if(res.response == 1)
-          {
-            uninstallSee(() => {
-              setInstallDirectoryEx(dir, newDir)
-            });
-          }
-          else
-            setInstallDirectoryEx(dir, newDir)
-        });
-      }
-      else
-        setInstallDirectoryEx(dir, newDir)
-    }
-  }
-}
-
-function generateChecksum(str) {
-  return crypto
-      .createHash('sha256')
-      .update(str, 'utf8')
-      .digest('hex');
-}
-
-
-function checkLithiumRunning(cb, tries)
-{
-  fs.open("C:\\ProgramData\\FallenMTA All\\1.5\\SeeLithium.sys", 'r+', function(err, fd){
-    if(err)
-      launcherLog("checkLithiumRunning err: " + err.toString())
-
-    if (err && err.code === 'EBUSY'){
-      if(tries > 12)
-      {
-        mainWindow.webContents.send("changedInstallProg");
-        setCurrentProc(false);
-        dialog.showErrorBox('Hiba', 'Hiba a SeeLithium bezárása közben! Kérlek indítsd újra a számítógépedet.\nFONTOS, hogy ezt a start menü, újraindítás lehetőséggel tedd!')
-      }
-      else
-      {
-        mainWindow.webContents.send("changedInstallProg", "Várakozás a SeeLithium bezárására...");
-        setTimeout(checkLithiumRunning, 1000, cb, tries+1)
-      }
-    }
-    else if(fd)
-    {
-      try {
-        fs.close(fd, function(){
-          cb();
-        });
-      } catch (e) {
-        launcherLog("checkLithiumRunning e: " + e.toString())
-        cb();
-      }
-    }
-    else
-      cb();
-});
-}
-
-function launchFinally()
-{
-  checkLithiumRunning(() => {
-    launcherLog("launching!")
-
-    mainWindow.webContents.send("changedInstallProg", "Indítás...");
-
-    spawnSync("powershell.exe",["Start-Process -FilePath '" + path.join(installDirectory, "Multi Theft Auto.exe") + "' -ArgumentList 'FallenLauncher' -Verb runAs"])
-
-    try { fs.rmSync(path.join(installDirectory, "tmp"), { recursive: true, force: true }) } catch (e) { launcherLog("tmp delete e: " + e.toString())}
-    
-    
-    try { fs.rmSync("C:\\ProgramData\\FallenMTA Launcher\\LastLaunch.see", { force: true }) } catch (e) { launcherLog("lastLauncDelete e: " + e.toString())}
-    
-    let execPath = process.env.PORTABLE_EXECUTABLE_FILE;
-
-    if(execPath)
-    {
-      try { fs.writeFileSync("C:\\ProgramData\\FallenMTA Launcher\\LastLaunch.see", execPath.toString()) } catch(e) { launcherLog("lastLaunchWrite e: " + e.toString()) }
-    }
-    
-    launcherLog("bye!")
-
-    app.quit();
-  }, 0);
-}
-
-function badLithium(ver, downloaded)
-{
-  if(downloaded)
-  {
-    setCurrentProc(false)
-    dialog.showErrorBox('Hiba', 'Hiba a SeeLithium ellenőrzése közben! (008)')
-  }
-  else
-  {
-    downloader("https://client.seega.me/dl/lithium" + ver + ".sys", path.join(installDirectory, "tmp", "lithium.sys"),
-    (dat) => {
-      mainWindow.webContents.send("changedInstallProg", "SeeLithium letöltése (" + formatBytes(dat.transferredBytes) + "/" + formatBytes(dat.totalBytes) + ")", dat.percent);
-    },
-    () => {
-      fs.copyFileSync(path.join(installDirectory, "tmp", "lithium.sys"), "C:\\ProgramData\\FallenMTA All\\1.5\\SeeLithium.sys");
-      checkLithium(true);
-    }, () => {
-      dialog.showErrorBox('Hiba', "Hiba a SeeLithium letöltése közben! (009)")
-      mainWindow.webContents.send("changedInstallProg", false);
-      setCurrentProc(false)
-    });
-  }
-}
-
-function checkLithium(downloaded)
-{
-  setCurrentProc("CheckingLithium")
-
-  mainWindow.webContents.send("changedInstallProg", "SeeLithium ellenőrzése...");
-
-  request('https://client.seega.me/api/lithium.php', { json: true }, (err, res, body) => {
-    if(!err && body && body[0] == "ok")
-    {
-      try {
-        let data = fs.readFileSync("C:\\ProgramData\\FallenMTA All\\1.5\\SeeLithium.sys");
-    
-        if(data)
-        {
-          let checksum = generateChecksum(data).trim().toLowerCase().substring(0, body[2].length);
-    
-          if(checksum == body[2])
-          {
-            launchFinally();
-            return
-          }
-
-          launcherLog("lithium checksum got: " + checksum )
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FallenMTA - Fórum</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        badLithium(body[1], downloaded);
-      }
-      catch (e) {
-        badLithium(body[1], downloaded);
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #18191c;
+            color: #dcddde;
+            padding: 20px;
+            font-size: 14px;
+        }
 
-        launcherLog("lithium checksum error: " + e.toString() )
-      }
-    }
-    else
-    {
-      setCurrentProc(false)
-      dialog.showErrorBox('Hiba', 'Hiba a SeeLithium ellenőrzése közben! (008)')
+        a {
+            color: #ffffff;
+            text-decoration: none;
+        }
 
-      launcherLog("lithium checksum http error: " + err.toString() )
-    }
-  })
-  
-}
+        a:hover {
+            text-decoration: underline;
+        }
 
-function checkFilesSum()
-{
-  setCurrentProc("CheckingSums")
-  console.log("checking sums")
+        .wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
 
-  mainWindow.webContents.send("changedInstallProg", "Fájlok ellenőrzése...");
+        /* Fejléc */
+        .header-top {
+            background-color: #2f3136;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+            border-bottom: 1px solid #202225;
+        }
 
-  fs.readFile(path.join(installDirectory, "tmp", "sum.see"), 'utf8', function (err,data) {
-    if (err) {
-      setCurrentProc(false)
-      dialog.showErrorBox('Hiba', 'Hiba a fájlok ellenőrzése közben! (006)')
-      return
-    }
-    else
-    {
-      let dat = data.split("\n");
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-      for(let i=0; i<dat.length; i+=2)
-      {
-        if(!currentProc)
-          return;
+        .logo span {
+            color: #3ba55d;
+        }
 
-        mainWindow.webContents.send("changedInstallProg", "Fájlok ellenőrzése...", i/dat.length);
+        .search-box input {
+            background-color: #202225;
+            border: 1px solid #202225;
+            padding: 7px 14px;
+            border-radius: 4px;
+            color: #dcddde;
+            width: 250px;
+            outline: none;
+        }
 
-        let file = dat[i];
-        if(file && dat[i+1])
-        {
-          let sum = dat[i+1].split("\r").join("").trim().toLowerCase();
-          
-          console.log(file, sum)
+        /* Navigációs sáv */
+        .nav-bar {
+            background-color: #2f3136;
+            padding: 10px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #202225;
+            border-bottom-left-radius: 4px;
+            border-bottom-right-radius: 4px;
+            margin-bottom: 20px;
+        }
 
-          try {
-            let data = fs.readFileSync(path.join(installDirectory, file));
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
 
-            if(data)
-            {
-              let checksum = generateChecksum(data).trim().toLowerCase().substring(0, sum.length);
+        .nav-links a {
+            color: #b9bbbe;
+        }
 
-              if(checksum != sum)
-              {
-                fs.rm(path.join(installDirectory, "ver.see"), { force: true }, () => {
-                  dialog.showErrorBox('Hiba', 'Hiba a fájlok ellenőrzése közben! Frissítés szükséges! (' + file + ' - ' + checksum + ' - ' + sum + ')')
-                  launcherLog("File error: " + file + " exptected " + sum + " got " + checksum)
-                  mainWindow.webContents.send("gotInstalledVersion", false);
-                  mainWindow.webContents.send("changedInstallProg", false);
-                  setCurrentProc(false)
-                });
-                
-                return;
-              }
+        .nav-links a:hover, .nav-links a.active {
+            color: #ffffff;
+            text-decoration: none;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #b9bbbe;
+        }
+
+        /* Fő konténer (két oszlop) */
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-container {
+                grid-template-columns: 1fr;
             }
-          }
-          catch (e) {
-
-            fs.rm(path.join(installDirectory, "ver.see"), { force: true }, () => {
-              dialog.showErrorBox('Hiba', 'Hiba a fájlok ellenőrzése közben! Frissítés szükséges! (' + file + ')')
-              
-              launcherLog("file check error, " + file + ": " + e.toString())
-
-              mainWindow.webContents.send("gotInstalledVersion", false);  
-              mainWindow.webContents.send("changedInstallProg", false);
-            });
-
-            setCurrentProc(false)
-            return;
-          }
         }
-      }
 
-      checkLithium();
-    }
-  });
-  /**/
-}
+        /* Téma létrehozása gomb sávja az Általános felett */
+        .top-action-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
 
-function launchSee(ver)
-{
-  setCurrentProc("LaunchingSee")
-  console.log("launching see")
+        .btn-new-topic {
+            background-color: #3ba55d;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-  mainWindow.webContents.send("changedInstallProg", "Fájlok ellenőrzése...", 0);
+        .btn-new-topic:hover {
+            background-color: #2d8247;
+        }
 
-  downloader("https://client.seega.me/dl/sum_" + ver + ".see", path.join(installDirectory, "tmp", "sum.see"), 
-    (dat) => {
-      mainWindow.webContents.send("changedInstallProg", "Fájlok ellenőrzése...", dat.percent);
-    }, 
-    () => {
-      checkFilesSum();
-    }, 
-    (e) => {
-      dialog.showErrorBox('Hiba', "Hiba a fájlok ellenőrzése közben! (005)")
-      mainWindow.webContents.send("changedInstallProg", false);
-      setCurrentProc(false)
-    });
-  
-}
+        /* Fórum lista blokk */
+        .forum-section {
+            background-color: #36393f;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #202225;
+            margin-bottom: 20px;
+        }
 
-function unzipUpdate()
-{
-  setCurrentProc("unzipUpdate")
-  
-  mainWindow.webContents.send("changedInstallProg", "Fájlok kibontása...", 0);
+        .category-header {
+            background-color: #2f3136;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #ffffff;
+            border-bottom: 1px solid #202225;
+        }
 
-  let unzipper = new DecompressZip(path.join(installDirectory, "tmp", "update.zip"));
- 
-  unzipper.extract({
-    path: installDirectory
-  });
-    // Add the error event listener
-  unzipper.on('error', function (err) {
-    dialog.showErrorBox('Hiba', 'Hiba a fájlok kibontása közben! (001)')
-    mainWindow.webContents.send("changedInstallProg", false);
-    setCurrentProc(false)
+        .forum-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid #202225;
+        }
 
-    launcherLog("unzip update error: " + err.toString())
-  });
+        .forum-row:last-child {
+            border-bottom: none;
+        }
 
-  // Notify when everything is extracted
-  unzipper.on('extract', function (log) {
-    fs.rm(path.join(installDirectory, "tmp"), { recursive: true, force: true }, () => {
-      mainWindow.webContents.send("changedInstallProg", false);
+        /* Váltakozó háttérszínek */
+        .forum-row.bg-1 {
+            background-color: #36393f;
+        }
 
-      checkInstallation()
-    })    
-  });
+        .forum-row.bg-2 {
+            background-color: #2f3136;
+        }
 
-  // Notify "progress" of the decompressed files
-  unzipper.on('progress', function (fileIndex, fileCount) {
-    mainWindow.webContents.send("changedInstallProg", "Fájlok kibontása (" + (fileIndex+1) + "/" + fileCount + ")", ((fileIndex+1)/fileCount));
-  });
-}
+        .forum-details {
+            flex: 1;
+        }
 
-function getLatestVerAndInstall()
-{
-  request('https://client.seega.me/api/ver.php', { json: true }, (err, res, body) => {
-    if(!err && body && body[0] == "ok")
-    {
-      mainWindow.webContents.send("gotRemoteVersion", body[1]);
-      console.log("remote ver: " + body)
+        .forum-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 3px;
+        }
 
-      installLatestClient(body[1]);
-    }
-    else
-    {
-      setCurrentProc(false)
-      dialog.showErrorBox('Hiba', 'Hiba a kliens frissítése közben! (002)')
-    }
-  })
-}
+        .forum-name {
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: #ffffff;
+        }
 
-function installLatestClient(ver) {
-  if(!ver)
-  {
-    getLatestVerAndInstall()
-    return;
-  }
+        .forum-desc {
+            font-size: 0.8rem;
+            color: #8e9297;
+            line-height: 1.3;
+        }
 
-  setCurrentProc("InstallingLatest")
+        .forum-stats {
+            text-align: right;
+            font-size: 0.8rem;
+            color: #8e9297;
+            min-width: 90px;
+        }
 
-  mainWindow.webContents.send("changedInstallProg", "Kliens telepítése...", 0);
+        .forum-last-post {
+            width: 220px;
+            font-size: 0.8rem;
+            color: #8e9297;
+            padding-left: 15px;
+            border-left: 1px solid #202225;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-  fs.mkdir(path.join(installDirectory, "tmp"), (err) => {
-    if(err && err.code != "EEXIST")
-    {
-      dialog.showErrorBox('Hiba', 'Hiba a kliens letöltése közben! (003)')
-      mainWindow.webContents.send("changedInstallProg", false);
-      setCurrentProc(false)
-    }
-    else
-    {
-      console.log("dl: https://client.seega.me/dl/latest_" + ver + ".zip")
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #202225;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: #ffffff;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
 
-      downloader("https://client.seega.me/dl/latest_" + ver + ".zip", path.join(installDirectory, "tmp", "update.zip"),
-      (dat) => {
-        mainWindow.webContents.send("changedInstallProg", "Kliens letöltése (" + formatBytes(dat.transferredBytes) + "/" + formatBytes(dat.totalBytes) + ")", dat.percent);
-      },
-      () => {
-        unzipUpdate();
-      }, () => {
-        dialog.showErrorBox('Hiba', "Hiba a kliens letöltése közben! (004)")
-        mainWindow.webContents.send("changedInstallProg", false);
-        setCurrentProc(false)
-      });
-    }
-  });
-}
+        .last-post-info a {
+            color: #ffffff;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 160px;
+        }
 
-function installUpdateClient(ver) {
-  setCurrentProc("InstallingUpdate")
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
-  mainWindow.webContents.send("changedInstallProg", "Frissítés telepítése...", 0);
+        .sidebar-box {
+            background-color: #2f3136;
+            border-radius: 4px;
+            border: 1px solid #202225;
+            overflow: hidden;
+        }
 
-  fs.mkdir(path.join(installDirectory, "tmp"), (err) => {
-    if(err && err.code != "EEXIST")
-    {
-      dialog.showErrorBox('Hiba', 'Hiba a frissítés letöltése közben! (009)')
-      mainWindow.webContents.send("changedInstallProg", false);
-      setCurrentProc(false)
-    }
-    else
-    {
-      downloader("https://client.seega.me/dl/update_" + ver + ".zip", path.join(installDirectory, "tmp", "update.zip"),
-      (dat) => {
-        mainWindow.webContents.send("changedInstallProg", "Frissítés letöltése (" + formatBytes(dat.transferredBytes) + "/" + formatBytes(dat.totalBytes) + ")", dat.percent);
-      },
-      () => {
-        unzipUpdate();
-      }, () => {
-        dialog.showErrorBox('Hiba', "Hiba a kliens letöltése közben! (008)")
-        mainWindow.webContents.send("changedInstallProg", false);
-        setCurrentProc(false)
-      });
-    }
-  });
-}
+        .sidebar-title {
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #ffffff;
+            border-bottom: 1px solid #202225;
+            background-color: #36393f;
+        }
 
-function checkForUpdate() {
-  setCurrentProc("CheckingForUpdate")
+        .sidebar-content {
+            padding: 12px 15px;
+            font-size: 0.82rem;
+            color: #b9bbbe;
+            line-height: 1.4;
+        }
 
-  fs.readFile(path.join(installDirectory, "ver.see"), 'utf8', function (err,data) {
-    if (err) {
-      installLatestClient();
-      return
-    }
-    else
-    {
-      request('https://client.seega.me/api/next.php?ver=' + encodeURIComponent(data), { json: true }, (err, res, body) => {
-        console.log(body);
-        if(!err && body)
-        {
-          if(body[0] == "ok")
-          {
-            console.log("next ver: " + body[1])
-            installUpdateClient(body[1]);
+        .recent-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #36393f;
+        }
+
+        .recent-item:last-child {
+            border-bottom: none;
+        }
+
+        .recent-item a {
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .recent-sub {
+            font-size: 0.75rem;
+            color: #8e9297;
+            margin-top: 2px;
+        }
+
+        /* Lábléc */
+        .footer {
+            margin-top: 30px;
+            padding: 20px 0;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #8e9297;
+            border-top: 1px solid #2f3136;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <!-- Fejléc -->
+        <div class="header-top">
+            <div class="logo">Fallen<span>MTA</span></div>
+            <div class="search-box">
+                <input type="text" placeholder="Keresés...">
+            </div>
+        </div>
+
+        <div class="nav-bar">
+            <div class="nav-links">
+                <a href="#" class="active">Fórumok</a>
+                <a href="#">UCP</a>
+                <a href="#">Prémium Shop</a>
+                <a href="#">Discord</a>
+                <a href="#">Újdonságok</a>
+            </div>
+            <div class="user-info">
+                <span>asd</span>
+            </div>
+        </div>
+
+        <!-- Fő tartalom és Sidebar -->
+        <div class="main-container">
             
-          }
-          else if(body[0] == "latest")
-            checkInstallation();
-          else if(body[0] == "bad_ver")
-            installLatestClient();
-        }
-        else
-        {
-          setCurrentProc(false)
-          dialog.showErrorBox('Hiba', 'Hiba a frissítés közben! (007)')
-          return
-        }
-      });
-    }
-  });
-}
-
-const filter = {
-  urls: ['https://client.seega.me/dl/dev/*']
-}
-
-function launchDev2() {
-  setCurrentProc("launchDev2")
-
-  mainWindow.webContents.send("changedInstallProg", false);
-          
-  launchFinally();
-}
-
-function launchDev() {
-  setCurrentProc("launchDev")
-
-  downloader("https://client.seega.me/dl/dev/lithium.sys", path.join(installDirectory, "tmp", "lithium.sys"),
-    (dat) => {
-      mainWindow.webContents.send("changedInstallProg", "DEV SeeLithium letöltése (" + formatBytes(dat.transferredBytes) + "/" + formatBytes(dat.totalBytes) + ")", dat.percent);
-    },
-    () => {
-      fs.copyFileSync(path.join(installDirectory, "tmp", "lithium.sys"), "C:\\ProgramData\\FallenMTA All\\1.5\\SeeLithium.sys");
-
-      fs.mkdir(path.join(installDirectory, "tmp"), (err) => {
-        if(err && err.code != "EEXIST")
-        {
-          dialog.showErrorBox('Hiba', 'Hiba a dev letöltése közben! (011)')
-          mainWindow.webContents.send("changedInstallProg", false);
-          setCurrentProc(false)
-        }
-        else
-        {
-          downloader("https://client.seega.me/dl/dev/latest.zip", path.join(installDirectory, "tmp", "update.zip"),
-          (dat) => {
-            mainWindow.webContents.send("changedInstallProg", "DEV letöltése (" + formatBytes(dat.transferredBytes) + "/" + formatBytes(dat.totalBytes) + ")", dat.percent);
-          },
-          () => {
-            mainWindow.webContents.send("changedInstallProg", "Fájlok kibontása...", 0);
-
-            let unzipper = new DecompressZip(path.join(installDirectory, "tmp", "update.zip"));
-          
-            unzipper.extract({
-              path: installDirectory
-            });
-              // Add the error event listener
-            unzipper.on('error', function (err) {
-              dialog.showErrorBox('Hiba', 'Hiba a dev fájlok kibontása közben! (013)')
-              mainWindow.webContents.send("changedInstallProg", false);
-              setCurrentProc(false)
-
-              launcherLog("unzip dev error: " + err.toString())
-            });
-          
-            // Notify when everything is extracted
-            unzipper.on('extract', function (log) {
-              launchDev2();   
-            });
-          
-            // Notify "progress" of the decompressed files
-            unzipper.on('progress', function (fileIndex, fileCount) {
-              mainWindow.webContents.send("changedInstallProg", "DEV Fájlok kibontása (" + (fileIndex+1) + "/" + fileCount + ")", ((fileIndex+1)/fileCount));
-            });
-          }, () => {
-            dialog.showErrorBox('Hiba', "Hiba a dev letöltése közben! (012)")
-            mainWindow.webContents.send("changedInstallProg", false);
-            setCurrentProc(false)
-          });
-        }
-      });
-    }, (e) => {
-      console.log(e);
-      dialog.showErrorBox('Hiba', 'Hiba a dev lithium letöltése közben! (010)')
-      mainWindow.webContents.send("changedInstallProg", false);
-      setCurrentProc(false)
-    });
-}
-
-function checkInstallation() {
-  setCurrentProc("CheckInstallation")
-  
-  try { fs.mkdirSync(installDirectory); } catch(e) { launcherLog("install mkdir e: " + e.toString()) }
-
-  fs.readFile(path.join(installDirectory, "ver.see"), 'utf8', function (err,data) {
-    if (err) {
-      installLatestClient();
-      return
-    }
-    else
-    {
-      mainWindow.webContents.send("gotInstalledVersion", data);
-      console.log("client version: " + data);
-
-      request('https://client.seega.me/api/ver.php', { json: true }, (err, res, body) => {
-        if(!err && body && body[0] == "ok")
-        {
-          mainWindow.webContents.send("gotRemoteVersion", body[1]);
-          console.log("remote ver: " + body)
-
-          if(data == body[1])
-            launchSee(data)
-          else
-            checkForUpdate();
-        }
-      });
-
-    }
-  });
-}
-
-function checkVersions()
-{
-  try { fs.mkdirSync(installDirectory); } catch(e) { launcherLog("installdir mkdir e: " + e.toString()) }
-
-  fs.readFile(path.join(installDirectory, "ver.see"), 'utf8', function (err,data) {
-    if (!err) {
-      mainWindow.webContents.send("gotInstalledVersion", data);
-    }
-    else
-      mainWindow.webContents.send("gotInstalledVersion", false);
-  });
- 
-  request('https://client.seega.me/api/ver.php', { json: true }, (err, res, body) => {
-    if(!err && body && body[0] == "ok")
-    {
-      console.log("remote ver: " + body[1])
-      mainWindow.webContents.send("gotRemoteVersion", body[1]);
-    }
-  });
-}
-
-let currentGtaSaPath = false;
-
-let termsVersion = "";
-let firstAccept = false;
-
-function FallenLauncherReady() {
-  try { fs.mkdirSync("C:\\ProgramData\\FallenMTA Launcher"); } catch (e) { launcherLog("launch process mkdir e: " + e.toString()) }
-
-  launcherLog("-----");
-
-  try {
-    var stats = fs.statSync("C:\\ProgramData\\FallenMTA Launcher\\log.txt");
-    var fileSize = stats.size/(1024*1024);
-    
-    if(fileSize >= 1)
-      fs.rmSync("C:\\ProgramData\\FallenMTA Launcher\\log.txt")
-  }
-  catch(e) {
-    launcherLog("launch logrot e: " + e.toString())
-  }
-
-  launcherLog("FallenLauncher ready, v: " + launcherVer);
-  launcherLog("Pack: " + app.isPackaged);
-  setCurrentProc("Starting")
-
-  try { fs.rmSync(path.join(installDirectory, "tmp"), { recursive: true, force: true }); } catch (e) {}
-
-  request('https://client.seega.me/api/launcher.php', { json: true }, (err, res, body) => {
-      launcherLog("got launcher remote ver: " + body);
-
-      if(!err && body && body[0] == "ok")
-      {
-        if(parseInt(body[1]) && parseInt(body[1]) > launcherVer)
-          dialog.showErrorBox('Frissítés elérhető', 'Elérhető frissítés a FallenMTA Launcherhez! Töltsd le innen: https://see-game.com/')
-      }
-    });
-
-  let ver = parseInt(os.release().split(".")[2]);
-  
-  launcherLog("os ver: " + ver)
-
-  if(ver < 10586)
-  {
-    dialog.showErrorBox('Régi Windows verzió', 'A jelenlegi Windows verziód túl régi, nem támogatott. A játék nem indul el, vagy nagyon instabil lehet. (Legalább Windows 10 10586)')
-  }
-
-  if(fs.existsSync("C:\\ProgramData\\FallenMTA Launcher\\LastNews.see"))
-  {
-    let lastNews = fs.readFileSync("C:\\ProgramData\\FallenMTA Launcher\\LastNews.see", 'utf8');
-
-    request('https://news.see-game.com/simplefeed/launcher/1/0', { json: true }, (err, res, body) => {
-      if(!body || !body[0] || body[0][1] != lastNews)
-        mainWindow.webContents.send("gotNewsAlert");
-    });
-  }
-  else
-    mainWindow.webContents.send("gotNewsAlert");
-
-  request('https://news.see-game.com/feed/launcher_title/1/0', { json: true }, (err, res, body) => {
-      if(!err && body && body[0] && body[0][0] && body[0][2])
-      { 
-        mainWindow.webContents.send("gotLauncherTitle", body[0][0], body[0][2], body[0][4]);
-      }
-    });
-  
-  if(fs.existsSync("C:\\ProgramData\\FallenMTA Launcher\\OverwriteGTAPath.see"))
-  {
-    currentGtaSaPath = fs.readFileSync("C:\\ProgramData\\FallenMTA Launcher\\OverwriteGTAPath.see", 'utf8');
-
-    if(currentGtaSaPath && !fs.existsSync(path.join(currentGtaSaPath, "gta_sa.exe")) && !fs.existsSync(path.join(currentGtaSaPath, "gta-sa.exe")) && fs.existsSync(path.join(currentGtaSaPath, "models\\gta3.img")))
-      currentGtaSaPath = false;
-    else
-      mainWindow.webContents.send("gotGtaSaPath", currentGtaSaPath);
-  }
-
-  if(!currentGtaSaPath)
-  {
-    let cmd;
-
-    if (process.arch === 'ia32' && process.env.hasOwnProperty('PROCESSOR_ARCHITEW6432')) {
-      cmd = '%windir%\\sysnative\\cmd.exe /c %windir%\\System32\\REG QUERY "HKLM\\Software\\Wow6432Node\\FallenMTA All\\Common"';
-    } else {
-      cmd = '%windir%\\System32\\REG QUERY "HKLM\\Software\\Wow6432Node\\FallenMTA All\\Common"';
-    }
-
-  
-    let output = "";
-
-    try { 
-      output = execSync(cmd).toString();
-    } catch (e) { output = "" };
-    
-    let softwareLines = output.split(/\r?\n/);
-
-    let lastKey = '';
-    let lastValue = '';
-
-    softwareLines.forEach(infoLine => {
-        if (infoLine.trim()) {
-            let infoTokens = infoLine.match(/^\s+(.+?)\s+REG_[^ ]+\s*(.*)/);
-            if (infoTokens) {
-                infoTokens.shift();
-                lastKey = infoTokens[0];
-                lastValue = infoTokens[1];
-            } else {
-                lastValue = lastValue + '\n' + infoLine;
-            }
-            
-            if(lastKey == "GTA:SA Path")
-              currentGtaSaPath = lastValue;
-        }
-
-      });
-      
-    if(currentGtaSaPath && !fs.existsSync(path.join(currentGtaSaPath, "gta_sa.exe")) && !fs.existsSync(path.join(currentGtaSaPath, "gta-sa.exe")) && fs.existsSync(path.join(currentGtaSaPath, "models\\gta3.img")))
-      currentGtaSaPath = false;
-    else
-      mainWindow.webContents.send("gotGtaSaPath", currentGtaSaPath);
-  }
-
-  if(!currentGtaSaPath)
-    findGtaSa();
-
-  mainWindow.webContents.send("gotLauncherVersion", launcherVer);
-
-  try { fs.mkdirSync("C:\\ProgramData\\FallenMTA Launcher\\NewsImg"); } catch (e) { launcherLog("launch process mkdir e: " + e.toString()) }
-  try { fs.mkdirSync("C:\\ProgramData\\FallenMTA All"); } catch (e) { launcherLog("launch process mkdir e: " + e.toString()) }
-  try { fs.mkdirSync("C:\\ProgramData\\FallenMTA All\\1.5"); } catch (e) { launcherLog("launch process mkdir e: " + e.toString()) }
-  try { fs.mkdirSync("C:\\ProgramData\\FallenMTA All\\Common"); } catch (e) {  launcherLog("launch process mkdir e: " + e.toString())  }
-  try { fs.mkdirSync("C:\\ProgramData\\FallenMTA All\\Common\\data"); } catch (e) {  launcherLog("launch process mkdir e: " + e.toString())  }
-  try { fs.mkdirSync("C:\\ProgramData\\FallenMTA All\\Common\\data\\cache"); } catch (e) {  launcherLog("launch process mkdir e: " + e.toString())  }
-
-  fs.readFile("C:\\ProgramData\\FallenMTA Launcher\\InstallFolder.see", 'utf8', function (err,data) {
-    setCurrentProc(false)
-
-    if(!err && fs.existsSync(data))
-      setInstallDirectory(data);
-    else
-      setInstallDirectory("C:\\")
-
-    
-    ipcMain.on("moveWindow", (e, x, y) => {
-    //  console.log("moveWindow: " + x + " " + y)
-      
-      let bounds = mainWindow.getBounds();
-
-      let winX = bounds.x + x;
-      let winY = bounds.y + y;
-
-      mainWindow.setBounds({
-        width: winW,
-        height: winH,
-        x: winX,
-        y: winY
-      });
-    });
-    
-    ipcMain.on("closeApp", () => {
-      app.quit();
-    });
-    
-    let newsRequesting = 0;
-
-    ipcMain.on("requestNews", (e, page) => {
-      if(!newsRequesting)
-      {
-        newsRequesting = 1;
-
-        request('https://news.see-game.com/feed/launcher/5/' + page, { json: true }, (err, res, body) => {
-          if(!err && body)
-          {
-            if(page == 0 && body[0] && body[0][1])
-            {
-              fs.writeFileSync("C:\\ProgramData\\FallenMTA Launcher\\LastNews.see", body[0][1].toString());
-            }
-
-            newsRequesting = 0;
-
-            mainWindow.webContents.send("gotNews", body);
-            
-            for(let i=0; i<body.length; i++)
-            {
-              if(body[i] != "next" && body[i][3])
-              {
-                newsRequesting++;
-
-                let fn = body[i][3];              
-
-                let newPath = path.join("C:\\ProgramData\\FallenMTA Launcher\\NewsImg", fn);
-
-                if(fs.existsSync(newPath))
-                {
-                  mainWindow.webContents.send("downloadedNewsImg", fn);
-                  newsRequesting--;
-                }
-                else
-                {
-                  downloader("https://news.see-game.com/img/" + fn, newPath,
-                  () => {},
-                  () => {
-                    mainWindow.webContents.send("downloadedNewsImg", fn);
-                    newsRequesting--;
-                  },
-                  () => {
-                    
-                    newsRequesting--;
-                  });
-                }
-              }
-            }
-          }
-        });
-      }
-    });
-
-    ipcMain.on("playGame", () => {
-      if(!installDirectory)
-        dialog.showErrorBox('Hiba', 'Előbb válassz telepítési útvonalat!')
-      else if(!currentProc)
-      {
-        if(!/^[a-zA-Z-\\\/: ._()0-9]*$/.test(currentGtaSaPath))
-          dialog.showErrorBox('Hiba', 'Ékezetet vagy speciális karaktert tartalmaz a GTA:SA mappa!')
-        else if(devCode)
-          launchDev()
-        else
-          checkInstallation()
-      }
-    })
-
-    ipcMain.on("resetCoreconfig", () => {
-      if(!currentProc)
-      {
-        dialog.showMessageBox({
-          title: "Alapértelmezett MTA beállítások",
-          buttons: ["Nem","Igen"],
-          message: "Biztosan szeretnéd visszaállítani az alapértelmezett beállításokat?\nMinden beállítás (beleértve a bindeket) elvész!"
-        }).then(res => {
-          if(res.response == 1)
-          {
-            try { fs.rmSync(path.join(installDirectory, "mta/config/coreconfig.xml")) } catch (e) {}
-            dialog.showMessageBox({
-              title: "Alapértelmezett MTA beállítások",
-              message: "Sikeresen visszaállítottad az alap beállításokat!"
-            })
-          }
-        });
-      }
-    })
-
-    ipcMain.on("playGameSkipDl", () => {
-      if(!installDirectory)
-        dialog.showErrorBox('Hiba', 'Előbb válassz telepítési útvonalat!')
-      else if(!currentProc)
-      {
-        if(devCode)
-          launchDev2()
-        else
-          checkInstallation()
-      }
-    })
-
-    ipcMain.on("uninstallSee", () => {
-      if(!installDirectory)
-        dialog.showErrorBox('Hiba', 'Nincs telepítési útvonal!')
-      else if(!currentProc)
-      {
-        uninstallSee()
-      }
-    })
-
-    ipcMain.on("changeInstallDirectory", () => {
-      if(!currentProc)
-      {
-        setCurrentProc("SettingInstallPath");
-
-        let dir = dialog.showOpenDialog(mainWindow, {
-
-          properties: ['openDirectory']
-      
-        });
-      
-        dir.then(res => {
-          setCurrentProc(false);
-
-          if(!res.canceled && res.filePaths[0])
-            setInstallDirectory(res.filePaths[0]);
-        })
-      }
-    });
-
-    ipcMain.on("changeGtaSaDir", () => {
-      if(!currentProc)
-      {
-        setCurrentProc("SettingGtaSAPath");
-
-        let dir = dialog.showOpenDialog(mainWindow, {
-
-          properties: ['openDirectory']
-      
-        });
-      
-        dir.then(res => {
-          setCurrentProc(false);
-
-          if(!res.canceled && res.filePaths[0])
-            checkAndSetGtaSaPath(res.filePaths[0]);
-        })
-      }
-    });
-
-
-
-    if(!fs.existsSync("C:\\ProgramData\\FallenMTA Launcher\\Terms.see"))
-    {
-      setCurrentProc("LoadingTerms");
-      loadTerms();
-      firstAccept = true;
-    }
-    else
-    {
-      mainWindow.webContents.send("showTerms", false, true);
-      mainWindow.webContents.send("showLogo");
-      
-      request('https://rules.see-game.com/api/ver/aszf/', (err, res, body) => {
-        if(!err && body)
-        { 
-          termsVersion = body.trim();
-
-          let currentVer = fs.readFileSync("C:\\ProgramData\\FallenMTA Launcher\\Terms.see", 'utf8');
-
-          if(!currentProc && currentVer != termsVersion)
-          {
-            setCurrentProc("LoadingTerms");
-            loadTerms();
-            firstAccept = true;
-          }
-        }
-      });
-
-      setCurrentProc(false);
-    }
-
-    
-    ipcMain.on("acceptTerms", () => {
-      mainWindow.webContents.send("showTerms", false, firstAccept);
-      fs.writeFileSync("C:\\ProgramData\\FallenMTA Launcher\\Terms.see", termsVersion.toString());
-      firstAccept = false
-    });
-      
-    ipcMain.on("showTerms", () => {
-      if(!currentProc)
-      {
-        setCurrentProc("LoadingTerms");
-        loadTerms();
-      }
-    });
-
-    launcherLog("LAUNCH")
-
-    if(fs.existsSync("C:\\ProgramData\\FallenMTA Launcher\\Dev.see"))
-    {
-      devCode = fs.readFileSync("C:\\ProgramData\\FallenMTA Launcher\\Dev.see", 'utf8');
-      mainWindow.webContents.send("refreshDevCode", devCode);
-      launcherLog("loaded dev: " + devCode)
-    }
-
-    ipcMain.on("openDev", (e, code) => {
-      launcherLog("dev: " + code)
-      
-      if(code && code.length > 0)
-      {
-        devCode = code;
-        fs.writeFileSync("C:\\ProgramData\\FallenMTA Launcher\\Dev.see", devCode.toString());
-      }
-      else
-      {
-        devCode = false;
-        try { fs.rmSync("C:\\ProgramData\\FallenMTA Launcher\\Dev.see", { force: true }); } catch (e) {}
-      }
-
-      mainWindow.webContents.send("refreshDevCode", devCode);
-    });
-      
-    ipcMain.on("autoGtaSaDir", () => {
-      if(!currentProc)
-      {
-        findGtaSa();
-      }
-    });
-
-
-  });
-
-function setGtaSaPath(newPath)
-{
-  launcherLog("setGtaSaPath: " + newPath)
-
-  if(newPath != currentGtaSaPath)
-  {
-    currentGtaSaPath = newPath;
-    mainWindow.webContents.send("gotGtaSaPath", newPath)
-
-    fs.writeFileSync("C:\\ProgramData\\FallenMTA Launcher\\OverwriteGTAPath.see", newPath)
-  }
-}
-
-function checkAndSetGtaSaPath(newPath)
-{
-  launcherLog("check & setGtaSaPath: " + newPath)
-
-  if(newPath != currentGtaSaPath)
-  {
-    if(newPath && (fs.existsSync(path.join(newPath, "gta_sa.exe")) || fs.existsSync(path.join(newPath, "gta-sa.exe"))) && fs.existsSync(path.join(newPath, "models\\gta3.img")))
-    {
-      currentGtaSaPath = newPath;
-      mainWindow.webContents.send("gotGtaSaPath", newPath)
-
-      fs.writeFileSync("C:\\ProgramData\\FallenMTA Launcher\\OverwriteGTAPath.see", newPath)
-    }
-    else
-      dialog.showErrorBox('Hiba', 'Nem található GTA:SA a megadott mappában!')
-  }
-
-  setCurrentProc(false);
-}
-
-function findGtaSa()
-{
-  setCurrentProc("FindingGta"); 
-
-  getAllInstalledSoftware().then((res) => {
-    let newPath = false;
-
-    for(let i=0; i<res.length; i++)
-    {
-        if(res[i].DisplayName)
-        {
-            let name = res[i].DisplayName.toLowerCase()
-
-            if(
-                ((name.indexOf("grand") != -1 && name.indexOf("theft") != -1 && name.indexOf("auto") != -1) || name.indexOf("gta") != -1) &&
-                ((name.indexOf("san") != -1 && name.indexOf("andreas") != -1) || name.indexOf("sa") != -1)
-            )
-            newPath = res[i].InstallLocation;
-        }
-    }
-
-
-    //newPath = false;
-
-    if(newPath && (fs.existsSync(path.join(newPath, "gta_sa.exe")) || fs.existsSync(path.join(newPath, "gta-sa.exe"))) && fs.existsSync(path.join(newPath, "models\\gta3.img")))
-      setGtaSaPath(newPath)
-    else
-    {
-      if (process.arch === 'ia32' && process.env.hasOwnProperty('PROCESSOR_ARCHITEW6432')) {
-        cmd = '%windir%\\sysnative\\cmd.exe /c %windir%\\System32\\REG QUERY "HKLM\\Software\\Wow6432Node\\Multi Theft Auto: San Andreas All\\Common"';
-      } else {
-        cmd = '%windir%\\System32\\REG QUERY "HKLM\\Software\\Wow6432Node\\Multi Theft Auto: San Andreas All\\Common"';
-      }
-
-      let output = "";
-
-      try { 
-        output = execSync(cmd).toString();
-      } catch (e) { output = "" };
-
-      let softwareLines = output.split(/\r?\n/);
-  
-      let lastKey = '';
-      let lastValue = '';
-  
-      softwareLines.forEach(infoLine => {
-          if (infoLine.trim()) {
-              let infoTokens = infoLine.match(/^\s+(.+?)\s+REG_[^ ]+\s*(.*)/);
-              if (infoTokens) {
-                  infoTokens.shift();
-                  lastKey = infoTokens[0];
-                  lastValue = infoTokens[1];
-              } else {
-                  lastValue = lastValue + '\n' + infoLine;
-              }
-              
-              if(lastKey == "GTA:SA Path")
-                newPath = lastValue;
-          }
-  
-        });
-
-      if(newPath && (fs.existsSync(path.join(newPath, "gta_sa.exe")) || fs.existsSync(path.join(newPath, "gta-sa.exe"))) && fs.existsSync(path.join(newPath, "models\\gta3.img")))
-        setGtaSaPath(newPath)
-      else
-        dialog.showErrorBox('Hiba', 'Nem található GTA:SA a számítógépeden! Kérlek válaszd ki kézzel a telepítési útvonalát a beállításokban!')
-    }
-
-    setCurrentProc(false);
-  })
-}
-
-  function loadTerms()
-  {
-    //https://rules.see-game.com/api/aszf/
-    request('https://rules.see-game.com/api/aszf/', (err, res, body) => {
-      if(!err && body)
-      {
-        body = body.split("\n");
-        body.shift();
-        termsVersion = body[0].trim();
-
-        mainWindow.webContents.send("showTerms", body);
-        mainWindow.webContents.send("showLogo");
-      }
-      else
-      {
-        mainWindow.webContents.send("showTerms", false);
-        mainWindow.webContents.send("showLogo");
-      }
-
-      setCurrentProc(false);
-    });
-  }
-  /*
-  let dir = dialog.showOpenDialog(mainWindow, {
-
-    properties: ['openDirectory']
-
-  });
-
-  dir.then(res =>     
-  })*/
-}
-
-process.on('uncaughtException', function (err) {
-  if(err.code == "EPERM")
-    dialog.showErrorBox('Hiba', "Kérlek indítsd el a FallenMTA Launchert rendszergazdaként!")
-    else if(err.code == "EBUSY")
-    dialog.showErrorBox('Hiba', "Próbáld újra, és amennyiben nem működik indítsd újra a számítógéped!")
-  else
-    dialog.showErrorBox('Hiba', err.toString())
-
-  launcherLog("Uncaught exception: " + err.code + ", " + err.toString())
-});
+            <!-- Bal oszlop: Fórumok -->
+            <div>
+                <!-- Új téma gomb jobb oldalon az Általános felett -->
+                <div class="top-action-bar">
+                    <button class="btn-new-topic">✏️ Új téma létrehozása...</button>
+                </div>
+
+                <!-- Általános Kategória -->
+                <div class="forum-section">
+                    <div class="category-header">Általános</div>
+
+                    <div class="forum-row bg-1">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">Fórum Szabályzat</a>
+                            </div>
+                            <div class="forum-desc">Mielőtt a fórumot használni kezded, ezt a szabályzatot kötelezettséged átolvasni és betartani!</div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-2">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">FallenMTA Szerver Szabályzat</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-1">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">Fórum moderátorra való panasztétel</a>
+                            </div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 3<br>Üzenet: 6
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">U</div>
+                            <div class="last-post-info">
+                                <a href="#">Admin Dicséret</a>
+                                <span class="recent-sub">Szombat 19:30</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-2">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">Fórummal kapcsolatos ötletek/gondok/hibák</a>
+                            </div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 13<br>Üzenet: 33
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">U</div>
+                            <div class="last-post-info">
+                                <a href="#">Hiba bejelentés</a>
+                                <span class="recent-sub">Tegnap 14:15</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FallenMTA - Los Santos Kategória -->
+                <div class="forum-section">
+                    <div class="category-header">FallenMTA - Los Santos</div>
+
+                    <div class="forum-row bg-1">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">Szerver fejlesztések</a>
+                            </div>
+                            <div class="forum-desc">FallenMTA changelogok.</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 18<br>Üzenet: 18
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">FM</div>
+                            <div class="last-post-info">
+                                <a href="#">SEPTEMBER UPDATE</a>
+                                <span class="recent-sub">2026. 09. 01.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-2">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">Panaszkönyv</a>
+                            </div>
+                            <div class="forum-desc">FallenMTA panaszkönyv.<br>Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 1.6K<br>Üzenet: 9.2K
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">LN</div>
+                            <div class="last-post-info">
+                                <a href="#">Lucia Novak panaszra</a>
+                                <span class="recent-sub">Tegnap 22:19</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-1">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">FőAdmin/SzuperAdmin segítségkérés</a>
+                            </div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 1.8K<br>Üzenet: 5.7K
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">C</div>
+                            <div class="last-post-info">
+                                <a href="#">Random aj amit ucp nem is</a>
+                                <span class="recent-sub">17 perce</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-2">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">Unban kérelmek</a>
+                            </div>
+                            <div class="forum-desc">Kitiltás alóli kérelmek.<br>Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 1.4K<br>Üzenet: 3.2K
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">UB</div>
+                            <div class="last-post-info">
+                                <a href="#">Unban kérelem #142</a>
+                                <span class="recent-sub">1 órával ezelőtt</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-1">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">Gondok/Bugok/Hibák</a>
+                            </div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 499<br>Üzenet: 1.3K
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">GB</div>
+                            <div class="last-post-info">
+                                <a href="#">Interior hiba bejelentés</a>
+                                <span class="recent-sub">3 órával ezelőtt</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-2">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">Frakciók</a>
+                            </div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 1.6K<br>Üzenet: 5.4K
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">F</div>
+                            <div class="last-post-info">
+                                <a href="#">PD Tagfelvétel</a>
+                                <span class="recent-sub">4 órával ezelőtt</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-1">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">Hirdető részleg</a>
+                            </div>
+                            <div class="forum-desc">Minden a szerveren felhalmozott legális vagyon, eladási, vételi és csere központja! IC RÉSZLEG<br>Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 59<br>Üzenet: 158
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">HR</div>
+                            <div class="last-post-info">
+                                <a href="#">Eladó ingatlan</a>
+                                <span class="recent-sub">5 órával ezelőtt</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-2">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">Los Santosi Élet</a>
+                            </div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 276<br>Üzenet: 854
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">LS</div>
+                            <div class="last-post-info">
+                                <a href="#">Képek a napról</a>
+                                <span class="recent-sub">6 órával ezelőtt</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-1">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">Művésznegyed</a>
+                            </div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 7<br>Üzenet: 50
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">M</div>
+                            <div class="last-post-info">
+                                <a href="#">Grafikai munkák</a>
+                                <span class="recent-sub">12 órával ezelőtt</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-2">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">Off Topic</a>
+                            </div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 12<br>Üzenet: 510
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">OT</div>
+                            <div class="last-post-info">
+                                <a href="#">Milyen zenét hallgatsz?</a>
+                                <span class="recent-sub">Tegnap</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-1">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">Moderátor részleg</a>
+                            </div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 250<br>Üzenet: 663
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">MR</div>
+                            <div class="last-post-info">
+                                <a href="#">Archívum</a>
+                                <span class="recent-sub">Tegnap</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-2">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">Fallen Game Helpdesk</a>
+                            </div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 352<br>Üzenet: 841
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">FG</div>
+                            <div class="last-post-info">
+                                <a href="#">Segítség indítással</a>
+                                <span class="recent-sub">2 napja</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-1">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper">
+                                <a href="#" class="forum-name">Kérdések</a>
+                            </div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">
+                            Téma: 19<br>Üzenet: 63
+                        </div>
+                        <div class="forum-last-post">
+                            <div class="avatar">K</div>
+                            <div class="last-post-info">
+                                <a href="#">Hol találom a...</a>
+                                <span class="recent-sub">3 napja</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Jobb oszlop: Sidebar -->
+            <div class="sidebar">
+                <!-- Online felhasználók -->
+                <div class="sidebar-box">
+                    <div class="sidebar-title">Online felhasználók</div>
+                    <div class="sidebar-content">
+                        Játékosok és vendégek böngészik az oldalt.<br><br>
+                        <strong style="color: #ed4245;">Összesen: 24 online tag</strong>
+                    </div>
+                </div>
+
+                <!-- Friss hozzászólások -->
+                <div class="sidebar-box">
+                    <div class="sidebar-title">Friss hozzászólások</div>
+                    <div class="sidebar-content">
+                        <div class="recent-item">
+                            <a href="#">csomagtartózás</a>
+                            <div class="recent-sub">15 perccel ezelőtt • Axe15</div>
+                        </div>
+                        <div class="recent-item">
+                            <a href="#">PD széf kulcs</a>
+                            <div class="recent-sub">54 perccel ezelőtt • Cali</div>
+                        </div>
+                        <div class="recent-item">
+                            <a href="#">Frakció jármű igénylés</a>
+                            <div class="recent-sub">1 órával ezelőtt • Bence</div>
+                        </div>
+                        <div class="recent-item">
+                            <a href="#">Kereskedés - Eladó Ford Mustang</a>
+                            <div class="recent-sub">2 órával ezelőtt • John</div>
+                        </div>
+                        <div class="recent-item">
+                            <a href="#">Box ring bajnokság jelentkezés</a>
+                            <div class="recent-sub">3 órával ezelőtt • Tyler</div>
+                        </div>
+                        <div class="recent-item">
+                            <a href="#">Rendőrségi jelentések #412</a>
+                            <div class="recent-sub">4 órával ezelőtt • Officer_Davis</div>
+                        </div>
+                        <div class="recent-item">
+                            <a href="#">Fixcard eladó olcsón!</a>
+                            <div class="recent-sub">5 órával ezelőtt • Kevin</div>
+                        </div>
+                        <div class="recent-item">
+                            <a href="#">Kifejtett ötlet: Új munkalehetőség</a>
+                            <div class="recent-sub">6 órával ezelőtt • Mark</div>
+                        </div>
+                        <div class="recent-item">
+                            <a href="#">San News hirdetések</a>
+                            <div class="recent-sub">7 órával ezelőtt • NewsBot</div>
+                        </div>
+                        <div class="recent-item">
+                            <a href="#">Helytelen jail ügy tisztázása</a>
+                            <div class="recent-sub">9 órával ezelőtt • Dexter</div>
+                        </div>
+                        <div class="recent-item">
+                            <a href="#">Paintjob minták gyűjteménye</a>
+                            <div class="recent-sub">11 órával ezelőtt • Tony</div>
+                        </div>
+                        <div class="recent-item">
+                            <a href="#">Szerelőtelep árak változása</a>
+                            <div class="recent-sub">13 órával ezelőtt • Mechanic_Leader</div>
+                        </div>
+                        <div class="recent-item">
+                            <a href="#">Parkolás felügyeleti jegyzőkönyv</a>
+                            <div class="recent-sub">15 órával ezelőtt • 𝓡𝔂𝓪𝓷</div>
+                        </div>
+                        <div class="recent-item">
+                            <a href="#">Klubb esték a Pig Penben</a>
+                            <div class="recent-sub">18 órával ezelőtt • ClubOwner</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Névnapok -->
+                <div class="sidebar-box">
+                    <div class="sidebar-title">Névnapok</div>
+                    <div class="sidebar-content">
+                        <strong>2026. szeptember 22. kedd</strong><br>
+                        Ma <strong>Móric</strong>, holnap <strong>Tekla</strong> ünnepli a névnapját.
+                    </div>
+                </div>
+
+                <!-- Mai születésnapok -->
+                <div class="sidebar-box">
+                    <div class="sidebar-title">Mai születésnapok</div>
+                    <div class="sidebar-content">
+                        Nincsenek ma születésnaposok.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="footer">
+            FallenMTA &copy; 2026 • Minden jog fenntartva.
+        </div>
+    </div>
+
+</body>
+</html>
