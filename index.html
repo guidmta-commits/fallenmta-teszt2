@@ -103,7 +103,7 @@
             font-weight: 600;
         }
 
-        /* Fő konténer (két oszlop) */
+        /* Fő konténer */
         .main-container {
             display: grid;
             grid-template-columns: 1fr 340px;
@@ -116,7 +116,6 @@
             }
         }
 
-        /* Téma létrehozása gomb sávja */
         .top-action-bar {
             display: flex;
             justify-content: flex-end;
@@ -141,7 +140,6 @@
             background-color: #2d8247;
         }
 
-        /* Fórum lista blokk */
         .forum-section {
             background-color: #36393f;
             border-radius: 4px;
@@ -303,7 +301,6 @@
             font-weight: 500;
         }
 
-        /* Lábléc */
         .footer {
             margin-top: 30px;
             padding: 20px 0;
@@ -317,6 +314,7 @@
 <body>
 
     <div class="wrapper">
+        <!-- Fejléc -->
         <div class="header-top">
             <div class="logo">DAWNMTA</div>
             <div class="search-box">
@@ -337,6 +335,7 @@
             </div>
         </div>
 
+        <!-- Fő tartalom -->
         <div class="main-container">
             
             <div>
@@ -344,6 +343,7 @@
                     <button class="btn-new-topic">✏️ Új téma létrehozása...</button>
                 </div>
 
+                <!-- 1. Kategória: Általános -->
                 <div class="forum-section">
                     <div class="category-header">Általános</div>
 
@@ -372,9 +372,7 @@
                             </div>
                             <div class="forum-desc">Alfórumok ▼</div>
                         </div>
-                        <div class="forum-stats">
-                            Téma: 3<br>Üzenet: 6
-                        </div>
+                        <div class="forum-stats">Téma: 3<br>Üzenet: 6</div>
                         <div class="forum-last-post">
                             <div class="avatar">U</div>
                             <div class="last-post-info">
@@ -392,9 +390,7 @@
                             </div>
                             <div class="forum-desc">Alfórumok ▼</div>
                         </div>
-                        <div class="forum-stats">
-                            Téma: 13<br>Üzenet: 33
-                        </div>
+                        <div class="forum-stats">Téma: 13<br>Üzenet: 33</div>
                         <div class="forum-last-post">
                             <div class="avatar">U</div>
                             <div class="last-post-info">
@@ -405,6 +401,7 @@
                     </div>
                 </div>
 
+                <!-- 2. Kategória: DAWNMTA - Los Santos -->
                 <div class="forum-section">
                     <div class="category-header">DAWNMTA - Los Santos</div>
 
@@ -416,9 +413,7 @@
                             </div>
                             <div class="forum-desc">DAWNMTA changelogok.</div>
                         </div>
-                        <div class="forum-stats">
-                            Téma: 18<br>Üzenet: 18
-                        </div>
+                        <div class="forum-stats">Téma: 18<br>Üzenet: 18</div>
                         <div class="forum-last-post">
                             <div class="avatar">FM</div>
                             <div class="last-post-info">
@@ -430,106 +425,179 @@
 
                     <div class="forum-row bg-2">
                         <div class="forum-details">
-                            <div class="forum-title-wrapper">
-                                <a href="#" class="forum-name">Panaszkönyv</a>
-                                <span class="badge-new">Új</span>
-                            </div>
+                            <div class="forum-title-wrapper"><a href="#" class="forum-name">Leírások (LS)</a></div>
+                            <div class="forum-desc">Dinamikus leírások, tudnivalók.<br>Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">Téma: 29<br>Üzenet: 459</div>
+                        <div class="forum-last-post">
+                            <div class="avatar">LS</div>
+                            <div class="last-post-info"><a href="#">DowntMTA LS - Fraki leírás</a><span class="recent-sub">2026. 09. 21. - kor...</span></div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-1">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper"><a href="#" class="forum-name">Ötletek (LS)</a></div>
+                            <div class="forum-desc">Szerverrel kapcsolatos ötletek.<br>Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">Téma: 267<br>Üzenet: 1.4K</div>
+                        <div class="forum-last-post">
+                            <div class="avatar">Ö</div>
+                            <div class="last-post-info"><a href="#">Mercedes-Benz E 63 S</a><span class="recent-sub">matt2043 - Yesterday</span></div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-2">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper"><a href="#" class="forum-name">Panaszkönyv (LS)</a><span class="badge-new">Új</span></div>
                             <div class="forum-desc">DAWNMTA panaszkönyv.<br>Alfórumok ▼</div>
                         </div>
-                        <div class="forum-stats">
-                            Téma: 1.6K<br>Üzenet: 9.2K
-                        </div>
+                        <div class="forum-stats">Téma: 1.6K<br>Üzenet: 9.2K</div>
                         <div class="forum-last-post">
                             <div class="avatar">LN</div>
-                            <div class="last-post-info">
-                                <a href="#">Damian D'Souza vs Laki...</a>
-                                <span class="recent-sub">2026. 09. 23. - balm...</span>
-                            </div>
+                            <div class="last-post-info"><a href="#">Damian D'Souza vs Laki</a><span class="recent-sub">2026. 09. 23. - balm...</span></div>
                         </div>
                     </div>
 
                     <div class="forum-row bg-1">
                         <div class="forum-details">
-                            <div class="forum-title-wrapper">
-                                <a href="#" class="forum-name">FőAdmin/SzuperAdmin segítségkérés</a>
-                                <span class="badge-new">Új</span>
-                            </div>
-                            <div class="forum-desc">Alfórumok ▼</div>
+                            <div class="forum-title-wrapper"><a href="#" class="forum-name">FőAdmin/SzuperAdmin segítségkérés (LS)</a><span class="badge-new">Új</span></div>
+                            <div class="forum-desc">Nincs megállapodó jogosultságú új indítóhoz ill.</div>
                         </div>
-                        <div class="forum-stats">
-                            Téma: 1.8K<br>Üzenet: 5.7K
-                        </div>
+                        <div class="forum-stats">Téma: 1.8K<br>Üzenet: 5.7K</div>
                         <div class="forum-last-post">
                             <div class="avatar">C</div>
-                            <div class="last-post-info">
-                                <a href="#">Mercedes-Benz E 63 S...</a>
-                                <span class="recent-sub">2026. 09. 23. - kor...</span>
-                            </div>
+                            <div class="last-post-info"><a href="#">Random aj amit ucp nem is</a><span class="recent-sub">2026. 09. 23. - kor...</span></div>
                         </div>
                     </div>
 
                     <div class="forum-row bg-2">
                         <div class="forum-details">
-                            <div class="forum-title-wrapper">
-                                <a href="#" class="forum-name">Unban kérelmek</a>
-                                <span class="badge-new">Új</span>
-                            </div>
-                            <div class="forum-desc">Kitiltás alóli kérelmek.<br>Alfórumok ▼</div>
+                            <div class="forum-title-wrapper"><a href="#" class="forum-name">Gondok/Bugok/Hibák (LS)</a><span class="badge-new">Új</span></div>
+                            <div class="forum-desc">Alfórumok ▼</div>
                         </div>
-                        <div class="forum-stats">
-                            Téma: 1.4K<br>Üzenet: 3.2K
-                        </div>
+                        <div class="forum-stats">Téma: 499<br>Üzenet: 1.3K</div>
                         <div class="forum-last-post">
-                            <div class="avatar">UB</div>
-                            <div class="last-post-info">
-                                <a href="#">William Blackwood jelentése</a>
-                                <span class="recent-sub">Utolsó: BENAK - ma 00:55</span>
-                            </div>
+                            <div class="avatar">GB</div>
+                            <div class="last-post-info"><a href="#">Palm Házas mappolás</a><span class="recent-sub">Hozdu</span></div>
                         </div>
                     </div>
 
                     <div class="forum-row bg-1">
                         <div class="forum-details">
-                            <div class="forum-title-wrapper">
-                                <a href="#" class="forum-name">Gondok/Bugok/Hibák</a>
-                                <span class="badge-new">Új</span>
-                            </div>
+                            <div class="forum-title-wrapper"><a href="#" class="forum-name">Frakciók (LS)</a><span class="badge-new">Új</span></div>
                             <div class="forum-desc">Alfórumok ▼</div>
                         </div>
-                        <div class="forum-stats">
-                            Téma: 499<br>Üzenet: 1.3K
-                        </div>
+                        <div class="forum-stats">Téma: 1.6K<br>Üzenet: 5.4K</div>
                         <div class="forum-last-post">
-                            <div class="avatar">GB</div>
-                            <div class="last-post-info">
-                                <a href="#">Interior hiba bejelentés</a>
-                                <span class="recent-sub">Hozdu</span>
-                            </div>
+                            <div class="avatar">F</div>
+                            <div class="last-post-info"><a href="#">PD Tagfelvétel</a><span class="recent-sub">Richard</span></div>
                         </div>
                     </div>
 
                     <div class="forum-row bg-2">
                         <div class="forum-details">
-                            <div class="forum-title-wrapper">
-                                <a href="#" class="forum-name">Frakciók</a>
-                                <span class="badge-new">Új</span>
-                            </div>
+                            <div class="forum-title-wrapper"><a href="#" class="forum-name">Hirdető részleg (LS)</a><span class="badge-new">Új</span></div>
+                            <div class="forum-desc">Minden a szerveren felhalmozott legális vagyon...<br>Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">Téma: 59<br>Üzenet: 158</div>
+                        <div class="forum-last-post">
+                            <div class="avatar">HR</div>
+                            <div class="last-post-info"><a href="#">Eladó/Csere - GT63S</a><span class="recent-sub">2026. 09. 16. - tikes</span></div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-1">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper"><a href="#" class="forum-name">Los Santosi Élet (LS)</a></div>
                             <div class="forum-desc">Alfórumok ▼</div>
                         </div>
-                        <div class="forum-stats">
-                            Téma: 1.6K<br>Üzenet: 5.4K
-                        </div>
+                        <div class="forum-stats">Téma: 276<br>Üzenet: 854</div>
                         <div class="forum-last-post">
-                            <div class="avatar">F</div>
-                            <div class="last-post-info">
-                                <a href="#">PD Tagfelvétel</a>
-                                <span class="recent-sub">Richard</span>
-                            </div>
+                            <div class="avatar">LS</div>
+                            <div class="last-post-info"><a href="#">Képek a napról</a><span class="recent-sub">matt1542</span></div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-2">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper"><a href="#" class="forum-name">Művésznegyed (LS)</a></div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">Téma: 7<br>Üzenet: 50</div>
+                        <div class="forum-last-post">
+                            <div class="avatar">M</div>
+                            <div class="last-post-info"><a href="#">Grafikai munkák</a><span class="recent-sub">Soldat Garage</span></div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-1">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper"><a href="#" class="forum-name">Off Topic (LS)</a></div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">Téma: 12<br>Üzenet: 510</div>
+                        <div class="forum-last-post">
+                            <div class="avatar">OT</div>
+                            <div class="last-post-info"><a href="#">Milyen zenét hallgatsz?</a><span class="recent-sub">morty</span></div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-2">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper"><a href="#" class="forum-name">Moderátor részleg (LS)</a></div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">Téma: 250<br>Üzenet: 663</div>
+                        <div class="forum-last-post">
+                            <div class="avatar">MR</div>
+                            <div class="last-post-info"><a href="#">Archívum</a><span class="recent-sub">Admin Leader</span></div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-1">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper"><a href="#" class="forum-name">Dawn Game Helpdesk (LS)</a></div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">Téma: 352<br>Üzenet: 841</div>
+                        <div class="forum-last-post">
+                            <div class="avatar">DG</div>
+                            <div class="last-post-info"><a href="#">Segítség indítással</a><span class="recent-sub">Helper Team</span></div>
+                        </div>
+                    </div>
+
+                    <div class="forum-row bg-2">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper"><a href="#" class="forum-name">Kérdések (LS)</a></div>
+                            <div class="forum-desc">Alfórumok ▼</div>
+                        </div>
+                        <div class="forum-stats">Téma: 19<br>Üzenet: 63</div>
+                        <div class="forum-last-post">
+                            <div class="avatar">K</div>
+                            <div class="last-post-info"><a href="#">Hol találom a...</a><span class="recent-sub">User123</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Kategória: Sun Yee On -->
+                <div class="forum-section">
+                    <div class="category-header">Sun Yee On</div>
+                    <div class="forum-row bg-1">
+                        <div class="forum-details">
+                            <div class="forum-title-wrapper"><a href="#" class="forum-name">Sun Yee On</a></div>
+                            <div class="forum-desc">Tagfelvétel: Nyitva • lánc: 12</div>
+                        </div>
+                        <div class="forum-stats">Téma: 45<br>Üzenet: 210</div>
+                        <div class="forum-last-post">
+                            <div class="avatar">SY</div>
+                            <div class="last-post-info"><a href="#">Belső jelentések #12</a><span class="recent-sub">Tanaka</span></div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Jobb oldali sáv (Sidebar) -->
             <div class="sidebar">
                 <div class="sidebar-box">
                     <div class="sidebar-title">Online statisztikák</div>
